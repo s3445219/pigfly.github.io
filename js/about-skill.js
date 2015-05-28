@@ -2,7 +2,7 @@
 var ctx = document.getElementById("myChart").getContext("2d");
 
 var data = {
-    labels: ["Java", "Objective-C", "C", "Python", "Perl", "PHP", "JavaScript", "Markup/down"],
+    labels: ["Java", "Objective-C", "C", "Python", "Perl", "PHP", "JavaScript", "Markup/down", "Rails", "Node.js", "Laravel"],
     datasets: [
         {
             label: "Pigfly's skill overview",
@@ -12,9 +12,9 @@ var data = {
             pointStrokeColor: "#fff",
             pointHighlightFill: "#fff",
             pointHighlightStroke: "rgba(220,220,220,1)",
-            data: [60, 50, 70, 80, 30, 50, 35, 70]
+            data: [60, 70, 60, 80, 40, 50, 50, 70, 60, 60, 50]
         }
-        
+
     ]
 };
 
