@@ -1,0 +1,432 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>road to iOS 0.1 - Pigfly's learning notes</title>
+  <meta name="author" content="Alex">
+
+   
+  <meta name="description" content="Yet another static blog for writing down what I've learned...">
+  
+  <meta name="keywords" content="">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://pigfly.github.io/blog/2014/08/road-to-ios-0-dot-1">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Pigfly's learning notes" type="application/atom+xml">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap-collapse.js"></script>
+  <script src="/js/modernizr-2.0.js"></script>
+  <script src="/js/octopress.js" type="text/javascript"></script>
+  <script src="/js/application.js"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <div class="navbar navbar-inverse navbar-static-top">
+  	<div class="navbar-inner">
+  	  <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="fui-menu-24"></span>
+        </a>
+  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
+  	      <ul class="nav">
+    
+        <li ><a href="/">Home</a></li>
+    
+        <li ><a href="/blog/archives">Archives</a></li>
+    
+        <li ><a href="/about.html">about</a></li>
+    
+</ul>
+
+<ul class="nav pull-right">
+    
+    <li><a href="http://github.com/pigfly" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+    
+    
+    
+    <li><a href="http://linkedin.com/in/notalexjiang" title="Linkedin Profile"><i class="icon-linkedin-sign social-navbar"></i></a></li>
+    
+    
+    
+    
+    
+
+    
+</ul>
+
+  	    </div>
+  	  </div>
+  	</div>
+  </div>
+  <div class="container" id="main">
+      <div class="row-fluid">
+        <div id="content">
+          <div>
+<article class="hentry" role="article">
+  
+
+  <header>
+  <div class="jumbotron">
+    Road to iOS 0.1
+	<h5><!-- https://github.com/imathis/octopress/commit/73e540409ceb8bc18048b6a96a4b815fc303ea28 -->
+
+
+
+
+
+<i class="icon-calendar"></i> <time class='entry-date' datetime='2014-08-31T09:16:07+10:00'><span class='date'>2014-08-31</span> <span class='time'>09:16</span></time></h5>
+  </div>
+</header>
+  <div class="row-fluid">
+    <div class="span12">
+      <h2>Attributed String &amp; UITextView in Objective-C</h2>
+
+<h3>What is Attributed String</h3>
+
+<p>Determine how text will render on the screen. You can think of <code>NSAttributedString</code> as an NSString where each character has an NSDictionary of &ldquo;attributes&rdquo;.</p>
+
+<figure class='code'><figcaption><span>example of creating attributed strings</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="c1">// this will create a dictionary for holding diifferent standard attributes</span>
+</span><span class='line'><span class="c1">// the name of attributes are global NSString constants</span>
+</span><span class='line'><span class="bp">NSDictionary</span> <span class="o">*</span><span class="n">attrsDictionary</span> <span class="o">=</span>
+</span><span class='line'>  <span class="c1">// specify font attributes</span>
+</span><span class='line'>  <span class="l">@{</span> <span class="nl">NSFontAttributeName</span> <span class="p">:</span>
+</span><span class='line'>       <span class="p">[</span><span class="bp">UIFont</span> <span class="nl">preferredFontWithTextStyle</span><span class="p">:</span><span class="n">UIFontTextStyleHeadline</span><span class="p">],</span>
+</span><span class='line'>  <span class="c1">// specify foreground attribute</span>
+</span><span class='line'>    <span class="nl">NSForegroundColorAttributeName</span> <span class="p">:</span> <span class="p">[</span><span class="bp">UIColor</span> <span class="n">greenColor</span><span class="p">],</span>
+</span><span class='line'>    <span class="nl">NSStrokeWidthAttributeName</span> <span class="p">:</span> <span class="p">@</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span>
+</span><span class='line'>    <span class="nl">NSStrokeColorAttributeName</span> <span class="p">:</span> <span class="p">[</span><span class="bp">UIColor</span> <span class="n">redColor</span><span class="p">]</span> <span class="l">}</span>
+</span><span class='line'><span class="c1">// creating attributed string using attribute dictionary</span>
+</span><span class='line'><span class="bp">NSAttributedString</span> <span class="o">*</span><span class="n">attrString</span> <span class="o">=</span>
+</span><span class='line'>  <span class="p">[[</span><span class="bp">NSAttributedString</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithString</span><span class="p">:</span><span class="s">@&quot;string&quot;</span> <span class="nl">attributes</span><span class="p">:</span><span class="n">attrsDictionary</span><span class="p">];</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<!--more-->
+
+
+<h3>What is NSRange</h3>
+
+<p>To specify subranges inside strings and arrays. It&rsquo;s a <strong>c structure</strong> defined as below:</p>
+
+<figure class='code'><figcaption><span>definition for NSRange</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="bp">_NSRange</span> <span class="p">{</span>
+</span><span class='line'>    <span class="c1">// The start index (0 is the first, as in C arrays).</span>
+</span><span class='line'>      <span class="bp">NSUInteger</span> <span class="n">location</span><span class="p">;</span>
+</span><span class='line'>      <span class="c1">// The number of items in the range (can be 0).</span>
+</span><span class='line'>      <span class="bp">NSUInteger</span> <span class="n">length</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span> <span class="n">NSRange</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>NSNotFound</h3>
+
+<p>A value, or a constant that indicates that an item requested couldn’t be found or doesn’t exist.</p>
+
+<figure class='code'><figcaption><span>illustrate NSRange + NSNotFound</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="bp">NSString</span> <span class="o">*</span><span class="n">heystack</span> <span class="o">=</span> <span class="s">@&quot;heystack&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="bp">NSString</span> <span class="o">*</span><span class="n">needle</span> <span class="o">=</span> <span class="s">@&quot;hi&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="c1">// find the range of needle inside heystack</span>
+</span><span class='line'><span class="n">NSRange</span> <span class="n">r</span> <span class="o">=</span> <span class="p">[</span><span class="n">heystack</span> <span class="nl">rangeOfString</span><span class="p">:</span><span class="n">needle</span><span class="p">];</span>
+</span><span class='line'><span class="c1">// if fail to find, do something</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">location</span> <span class="o">==</span> <span class="n">NSNotFound</span><span class="p">)</span> <span class="p">{...}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>NSRangePointer</h3>
+
+<p>Just a <code>NSRange *</code> used as an method parameter</p>
+
+<h2><br></h2>
+
+<h3>Access attributes of NSAttributedString</h3>
+
+<ul>
+<li>get the value for an attribute</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>get the value for an attribute from NSAttributedString</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">id</span><span class="p">)</span><span class="nf">attribute:</span><span class="p">(</span><span class="bp">NSString</span> <span class="o">*</span><span class="p">)</span><span class="nv">attributeName</span> <span class="nf">atIndex:</span><span class="p">(</span><span class="bp">NSUInteger</span><span class="p">)</span><span class="nv">index</span>
+</span><span class='line'>                                 <span class="nf">effectiveRange:</span><span class="p">(</span><span class="n">NSRangePointer</span><span class="p">)</span><span class="nv">aRange</span>
+</span><span class='line'><span class="c1">// attributeName: the name of standard attribute</span>
+</span><span class='line'><span class="c1">// aRange: If you don&#39;t need this value, pass NULL</span>
+</span><span class='line'><span class="c1">// return value: The value for the attribute named attributeName of the character at index index, or nil if there is no such attribute.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>get all attributes as NSDictionary</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>return all attributes as NSDictionary</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="bp">NSDictionary</span> <span class="o">*</span><span class="p">)</span><span class="nf">attributesAtIndex:</span><span class="p">(</span><span class="bp">NSUInteger</span><span class="p">)</span><span class="nv">index</span> <span class="nf">effectiveRange:</span><span class="p">(</span><span class="n">NSRangePointer</span><span class="p">)</span><span class="nv">aRange</span>
+</span><span class='line'><span class="c1">// return value: The attributes for the character at index.</span>
+</span><span class='line'><span class="c1">// aRange: If you don&#39;t need this value, pass NULL</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Set attributes of NSAttributedString</h3>
+
+<p>Since NSAttributedString is <strong>immutable</strong>, we need <code>NSMutableAttributedString</code> to do all the settings&hellip;</p>
+
+<figure class='code'><figcaption><span>setting attributes on characters</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="c1">// add an attribute to a range of characters </span>
+</span><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">addAttributes:</span><span class="p">(</span><span class="bp">NSDictionary</span> <span class="o">*</span><span class="p">)</span><span class="nv">attributes</span> <span class="nf">range:</span><span class="p">(</span><span class="n">NSRange</span><span class="p">)</span><span class="nv">range</span><span class="p">;</span>
+</span><span class='line'><span class="c1">// set attributes in a range</span>
+</span><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">setAttributes:</span><span class="p">(</span><span class="bp">NSDictionary</span> <span class="o">*</span><span class="p">)</span><span class="nv">attributes</span> <span class="nf">range:</span><span class="p">(</span><span class="n">NSRange</span><span class="p">)</span><span class="nv">range</span><span class="p">;</span>
+</span><span class='line'><span class="c1">// remove attribute in a range</span>
+</span><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">removeAttribute:</span><span class="p">(</span><span class="bp">NSString</span> <span class="o">*</span><span class="p">)</span><span class="nv">attributeName</span> <span class="nf">range:</span><span class="p">(</span><span class="n">NSRange</span><span class="p">)</span><span class="nv">range</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2><br></h2>
+
+<h3>NSAttributedString is not an NSString</h3>
+
+<p>It&rsquo;s not a subclass of <code>NSString</code>, methods of <code>NSString</code> don&rsquo;t apply for <code>NSAttributedString</code>. However, you can convert it to <code>NSString</code> using <strong>- (NSString *)string</strong>.</p>
+
+<figure class='code'><figcaption><span>NSAttributedString to NSString</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="bp">NSAttributedString</span> <span class="o">*</span><span class="n">attributedString</span> <span class="o">=</span> <span class="p">...;</span>
+</span><span class='line'><span class="bp">NSString</span> <span class="o">*</span><span class="n">substring</span> <span class="o">=</span> <span class="p">...;</span>
+</span><span class='line'><span class="n">NSRange</span> <span class="n">r</span> <span class="o">=</span> <span class="p">[[</span><span class="n">attributedString</span> <span class="n">string</span><span class="p">]</span> <span class="nl">rangeOfString</span><span class="p">:</span><span class="n">substring</span><span class="p">];</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2><br></h2>
+
+<h3>UITextView</h3>
+
+<ul>
+<li>Display multiline text using custom style</li>
+<li>selectable, editable, scrollable</li>
+</ul>
+
+
+<h4>Set text and attributes in UITextView using textStorage</h4>
+
+<ul>
+<li>NSTextStorage is a subclass of NSMutableAttributedString.</li>
+<li>simply modify it and the UITextView will <strong>automatically update</strong></li>
+</ul>
+
+
+<figure class='code'><figcaption><span>use textStorage to modify content in UITextView</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="k">@interface</span> <span class="nc">ViewController</span> <span class="p">()</span>
+</span><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="k">weak</span><span class="p">,</span> <span class="k">nonatomic</span><span class="p">)</span> <span class="kt">IBOutlet</span> <span class="bp">UITextView</span> <span class="o">*</span><span class="n">body</span><span class="p">;</span>
+</span><span class='line'><span class="k">@end</span>
+</span><span class='line'><span class="c1">// Prototype: @property (nonatomic, readonly) NSTextStorage *textStorage</span>
+</span><span class='line'><span class="p">[</span><span class="nb">self</span><span class="p">.</span><span class="n">body</span><span class="p">.</span><span class="n">textStorage</span> <span class="nl">addAttributes</span><span class="p">:</span><span class="l">@{</span> <span class="nl">NSStrokeWidthAttributeName</span> <span class="p">:</span> <span class="mi">@3</span><span class="p">,</span>
+</span><span class='line'>                                        <span class="nl">NSStrokeColorAttributeName</span> <span class="p">:[</span><span class="bp">UIColor</span> <span class="n">purpleColor</span><span class="p">]</span><span class="l">}</span>
+</span><span class='line'>                               <span class="nl">range</span><span class="p">:</span><span class="nb">self</span><span class="p">.</span><span class="n">body</span><span class="p">.</span><span class="n">selectedRange</span><span class="p">];</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>Set font in UITextView</h4>
+
+<ul>
+<li>one thing to keep in mind, the <code>@property (nonatomic, strong) UIFont *font;</code> will apply a font to the entire UITextView</li>
+</ul>
+
+
+<h2><br></h2>
+
+<h3>Mindmap for NSAttributedString</h3>
+
+<p><img src="/images/ios/NSAttributedString.png" title="NSAttributedString Mindmap" ></p>
+
+<h2><br></h2>
+
+<h3>Reference</h3>
+
+<ol>
+<li>Stanford iOS 7 development</li>
+<li><a href="https://developer.apple.com/library/mac/navigation/">Mac Developer Library</a></li>
+<li><a href="http://www.apress.com/9781430260226">Beginning iOS 7 Development</a></li>
+</ol>
+
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    <hr>
+    
+    <div class="row-fluid">
+      
+      <div class="span6">
+        <p class="meta">
+        
+        
+
+
+
+  <a href="/blog/categories/ios/"><span class="badge">ios</span></a>
+
+
+
+
+        </p>
+      </div>
+      
+      <div class="span6 social-sharing">
+        <div class="sharing">
+  <div class="addthis_toolbox addthis_default_style ">
+  
+  
+  <a class="addthis_button_tweet"></a>
+  
+  
+  <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+
+      </div>
+      
+      
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span12">
+        <p class="meta">
+          
+            <a class="basic-alignment left" href="/blog/2014/08/road-to-ios-0/" title="Previous Post: road to iOS 0">&laquo; road to iOS 0</a>
+          
+          
+            <a class="basic-alignment right" href="/blog/2014/09/road-to-ios-0-dot-2/" title="Next Post: road to iOS 0.2">road to iOS 0.2 &raquo;</a>
+          
+        </p>
+      </div>
+    </div>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+
+
+        </div>
+      </div>
+      <div class="row-fluid">
+        <footer class="footer-page" role="contentinfo">
+          <p>
+  Copyright &copy; 2015 - <a href="http://pigfly.io">Alex</a> -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  - Under Creative Commons <a href="http://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>
+</p>
+
+
+        </footer>
+      </div>
+  </div>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'pigfly';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://pigfly.github.io/blog/2014/08/road-to-ios-0-dot-1/';
+        var disqus_url = 'http://pigfly.github.io/blog/2014/08/road-to-ios-0-dot-1/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

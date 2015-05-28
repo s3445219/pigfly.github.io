@@ -1,0 +1,351 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>perl week2 cont - Pigfly's learning notes</title>
+  <meta name="author" content="Alex">
+
+   
+  <meta name="description" content="Yet another static blog for writing down what I've learned...">
+  
+  <meta name="keywords" content="">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://pigfly.github.io/blog/2014/08/perl-week2-cont">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Pigfly's learning notes" type="application/atom+xml">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap-collapse.js"></script>
+  <script src="/js/modernizr-2.0.js"></script>
+  <script src="/js/octopress.js" type="text/javascript"></script>
+  <script src="/js/application.js"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <div class="navbar navbar-inverse navbar-static-top">
+  	<div class="navbar-inner">
+  	  <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="fui-menu-24"></span>
+        </a>
+  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
+  	      <ul class="nav">
+    
+        <li ><a href="/">Home</a></li>
+    
+        <li ><a href="/blog/archives">Archives</a></li>
+    
+        <li ><a href="/about.html">about</a></li>
+    
+</ul>
+
+<ul class="nav pull-right">
+    
+    <li><a href="http://github.com/pigfly" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+    
+    
+    
+    <li><a href="http://linkedin.com/in/notalexjiang" title="Linkedin Profile"><i class="icon-linkedin-sign social-navbar"></i></a></li>
+    
+    
+    
+    
+    
+
+    
+</ul>
+
+  	    </div>
+  	  </div>
+  	</div>
+  </div>
+  <div class="container" id="main">
+      <div class="row-fluid">
+        <div id="content">
+          <div>
+<article class="hentry" role="article">
+  
+
+  <header>
+  <div class="jumbotron">
+    Perl Week2 Cont
+	<h5><!-- https://github.com/imathis/octopress/commit/73e540409ceb8bc18048b6a96a4b815fc303ea28 -->
+
+
+
+
+
+<i class="icon-calendar"></i> <time class='entry-date' datetime='2014-08-30T17:28:42+10:00'><span class='date'>2014-08-30</span> <span class='time'>17:28</span></time></h5>
+  </div>
+</header>
+  <div class="row-fluid">
+    <div class="span12">
+      <h2>RegEx cont.</h2>
+
+<hr />
+
+<h3>Variables</h3>
+
+<ul>
+<li>Match vars.
+
+<ul>
+<li>if regex have parens i.e. groups</li>
+<li>if group got successful match
+
+<ul>
+<li>then the content of matched pattern stored in <code>$1</code>, meaning first match against first group</li>
+<li>e.g. <code>/(\S+)(\S+),(\S+)/</code> corresponding matched content is <code>print $1 $2 $3</code></li>
+</ul>
+</li>
+<li><strong>classical match idiom</strong>: <code>if(xx =~ xx) do sth else die</code></li>
+<li>three special vars.
+
+<ul>
+<li>a regex matching a string divides the string into 3 pars</li>
+<li><code>$&amp;</code>: the part actually matched</li>
+<li><code>$\backslash</code>: the part before matched</li>
+<li><code>$'</code>: the part after matched</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+
+<!--more-->
+
+
+<ul>
+<li><p>Noncapturing parens</p>
+
+<ul>
+<li>sometimes, we use parens only for precedence, however, it still trigger matching variable.</li>
+<li>how can we escape from that, to tell perl not to trigger matching var in parens ?</li>
+<li>to avoid triggering memory, change <code>(…)</code> to <code>(?:…)</code></li>
+<li>e.g. <code>/(\S+)(?:and|or)(\S+)/</code> the middle parens won&rsquo;t be counted as $2, instead, the last parens is $2.</li>
+</ul>
+</li>
+<li><p>Named captures</p>
+
+<ul>
+<li>even better way, to tell which parens I want to capture, and give name to that matching var.</li>
+<li>e.g. <code>/(?&lt;name1&gt;\S+)(lorem)/</code> now <code>print "$+{name1}"</code> will print the content of matching \S+ in the named capture you create.</li>
+</ul>
+</li>
+</ul>
+
+
+<hr />
+
+<h3>Substitution</h3>
+
+<ul>
+<li><code>s/old/new/</code>
+
+<ul>
+<li>old is <strong>RegEx</strong></li>
+<li><strong>new is treated as double quoted string</strong>, so if there is <code>$var</code> inside, will be replaced as its value. <strong>never think of putting RegEx in new!</strong></li>
+<li>RegEx triggers back reference var: <code>s/with(\w+)/without$1/</code> like said before, $1 is special var in double quoted string context, will be replaced by its value</li>
+<li>idiom: <code>if (s/old/new/) {…}</code></li>
+</ul>
+</li>
+<li>Alternate delimiter
+
+<ul>
+<li>e.g. <code>#^https://#http://#</code> again, don&rsquo;t put <code>^</code>in http, it&rsquo;s merely treated as &ldquo;string&rdquo;!</li>
+</ul>
+</li>
+<li>More Modes
+
+<ul>
+<li><strong>Global</strong> matching, <code>s/\s+/ /g</code> transform to canonical whitespace</li>
+<li>case-insensitive, <code>s/old/new/i</code></li>
+<li><code>.</code> including new lines, <code>s/old/new/s</code></li>
+</ul>
+</li>
+</ul>
+
+
+<hr />
+
+<ul>
+<li><strong>List-context match</strong>
+
+<ul>
+<li>you can store <strong>parens</strong> matched result in a list</li>
+<li>e.g. <code>my($first, $second, $third) = /(\S)(\S),(\S)/;</code></li>
+<li>e.g. <code>my @words = /(\w+)/g</code></li>
+</ul>
+</li>
+<li>**Non-greedy quantifier
+
+<ul>
+<li>quantifier normally go long, then back off</li>
+<li>we can tell perl go as short as you can !</li>
+<li><strong>Append <code>?</code> to <em>quantifier</em> to make it lazy</strong></li>
+</ul>
+</li>
+<li>Split function
+
+<ul>
+<li><code>my @fields = split /separator/, $string</code></li>
+<li>separator here is RegEx</li>
+<li><code>my @ip = split /\./, "192.168.1.1";</code></li>
+</ul>
+</li>
+<li>Case shifting
+
+<ul>
+<li><code>\U</code>: take every var following <code>\U</code>, make them uppercase</li>
+<li><code>\L</code>: take every var following <code>\L</code>, make them lowercase</li>
+<li><code>\u</code>: take first char of followed, make it uppercase</li>
+<li><code>\l</code>: take first char of followed, make it lowercase</li>
+<li><code>\E</code>: where case shifting stops</li>
+<li>N.B. all these happen in &ldquo;string&rdquo;!</li>
+<li>e.g. <code>s/(\w+)/\U$1/</code></li>
+<li>e.g. <code>s/(\w{2})/\u\L$1/ig</code> <strong>initial cap</strong></li>
+</ul>
+</li>
+</ul>
+
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    <hr>
+    
+    <div class="row-fluid">
+      
+      <div class="span6">
+        <p class="meta">
+        
+        
+
+
+
+  <a href="/blog/categories/perl/"><span class="badge">perl</span></a>
+
+
+
+
+        </p>
+      </div>
+      
+      <div class="span6 social-sharing">
+        <div class="sharing">
+  <div class="addthis_toolbox addthis_default_style ">
+  
+  
+  <a class="addthis_button_tweet"></a>
+  
+  
+  <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+
+      </div>
+      
+      
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span12">
+        <p class="meta">
+          
+            <a class="basic-alignment left" href="/blog/2014/08/perl-week1-cont/" title="Previous Post: perl week1 cont">&laquo; perl week1 cont</a>
+          
+          
+            <a class="basic-alignment right" href="/blog/2014/08/road-to-ios-0/" title="Next Post: road to iOS 0">road to iOS 0 &raquo;</a>
+          
+        </p>
+      </div>
+    </div>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+
+
+        </div>
+      </div>
+      <div class="row-fluid">
+        <footer class="footer-page" role="contentinfo">
+          <p>
+  Copyright &copy; 2015 - <a href="http://pigfly.io">Alex</a> -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  - Under Creative Commons <a href="http://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>
+</p>
+
+
+        </footer>
+      </div>
+  </div>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'pigfly';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://pigfly.github.io/blog/2014/08/perl-week2-cont/';
+        var disqus_url = 'http://pigfly.github.io/blog/2014/08/perl-week2-cont/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

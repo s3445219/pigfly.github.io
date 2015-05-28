@@ -1,0 +1,571 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: perl | Pigfly's learning notes]]></title>
+  <link href="http://pigfly.github.io/blog/categories/perl/atom.xml" rel="self"/>
+  <link href="http://pigfly.github.io/"/>
+  <updated>2015-05-29T00:43:13+10:00</updated>
+  <id>http://pigfly.github.io/</id>
+  <author>
+    <name><![CDATA[Alex]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[perl week2 cont]]></title>
+    <link href="http://pigfly.github.io/blog/2014/08/perl-week2-cont/"/>
+    <updated>2014-08-30T17:28:42+10:00</updated>
+    <id>http://pigfly.github.io/blog/2014/08/perl-week2-cont</id>
+    <content type="html"><![CDATA[<h2>RegEx cont.</h2>
+
+<hr />
+
+<h3>Variables</h3>
+
+<ul>
+<li>Match vars.
+
+<ul>
+<li>if regex have parens i.e. groups</li>
+<li>if group got successful match
+
+<ul>
+<li>then the content of matched pattern stored in <code>$1</code>, meaning first match against first group</li>
+<li>e.g. <code>/(\S+)(\S+),(\S+)/</code> corresponding matched content is <code>print $1 $2 $3</code></li>
+</ul>
+</li>
+<li><strong>classical match idiom</strong>: <code>if(xx =~ xx) do sth else die</code></li>
+<li>three special vars.
+
+<ul>
+<li>a regex matching a string divides the string into 3 pars</li>
+<li><code>$&amp;</code>: the part actually matched</li>
+<li><code>$\backslash</code>: the part before matched</li>
+<li><code>$'</code>: the part after matched</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+
+<!--more-->
+
+
+<ul>
+<li><p>Noncapturing parens</p>
+
+<ul>
+<li>sometimes, we use parens only for precedence, however, it still trigger matching variable.</li>
+<li>how can we escape from that, to tell perl not to trigger matching var in parens ?</li>
+<li>to avoid triggering memory, change <code>(…)</code> to <code>(?:…)</code></li>
+<li>e.g. <code>/(\S+)(?:and|or)(\S+)/</code> the middle parens won&rsquo;t be counted as $2, instead, the last parens is $2.</li>
+</ul>
+</li>
+<li><p>Named captures</p>
+
+<ul>
+<li>even better way, to tell which parens I want to capture, and give name to that matching var.</li>
+<li>e.g. <code>/(?&lt;name1&gt;\S+)(lorem)/</code> now <code>print "$+{name1}"</code> will print the content of matching \S+ in the named capture you create.</li>
+</ul>
+</li>
+</ul>
+
+
+<hr />
+
+<h3>Substitution</h3>
+
+<ul>
+<li><code>s/old/new/</code>
+
+<ul>
+<li>old is <strong>RegEx</strong></li>
+<li><strong>new is treated as double quoted string</strong>, so if there is <code>$var</code> inside, will be replaced as its value. <strong>never think of putting RegEx in new!</strong></li>
+<li>RegEx triggers back reference var: <code>s/with(\w+)/without$1/</code> like said before, $1 is special var in double quoted string context, will be replaced by its value</li>
+<li>idiom: <code>if (s/old/new/) {…}</code></li>
+</ul>
+</li>
+<li>Alternate delimiter
+
+<ul>
+<li>e.g. <code>#^https://#http://#</code> again, don&rsquo;t put <code>^</code>in http, it&rsquo;s merely treated as &ldquo;string&rdquo;!</li>
+</ul>
+</li>
+<li>More Modes
+
+<ul>
+<li><strong>Global</strong> matching, <code>s/\s+/ /g</code> transform to canonical whitespace</li>
+<li>case-insensitive, <code>s/old/new/i</code></li>
+<li><code>.</code> including new lines, <code>s/old/new/s</code></li>
+</ul>
+</li>
+</ul>
+
+
+<hr />
+
+<ul>
+<li><strong>List-context match</strong>
+
+<ul>
+<li>you can store <strong>parens</strong> matched result in a list</li>
+<li>e.g. <code>my($first, $second, $third) = /(\S)(\S),(\S)/;</code></li>
+<li>e.g. <code>my @words = /(\w+)/g</code></li>
+</ul>
+</li>
+<li>**Non-greedy quantifier
+
+<ul>
+<li>quantifier normally go long, then back off</li>
+<li>we can tell perl go as short as you can !</li>
+<li><strong>Append <code>?</code> to <em>quantifier</em> to make it lazy</strong></li>
+</ul>
+</li>
+<li>Split function
+
+<ul>
+<li><code>my @fields = split /separator/, $string</code></li>
+<li>separator here is RegEx</li>
+<li><code>my @ip = split /\./, "192.168.1.1";</code></li>
+</ul>
+</li>
+<li>Case shifting
+
+<ul>
+<li><code>\U</code>: take every var following <code>\U</code>, make them uppercase</li>
+<li><code>\L</code>: take every var following <code>\L</code>, make them lowercase</li>
+<li><code>\u</code>: take first char of followed, make it uppercase</li>
+<li><code>\l</code>: take first char of followed, make it lowercase</li>
+<li><code>\E</code>: where case shifting stops</li>
+<li>N.B. all these happen in &ldquo;string&rdquo;!</li>
+<li>e.g. <code>s/(\w+)/\U$1/</code></li>
+<li>e.g. <code>s/(\w{2})/\u\L$1/ig</code> <strong>initial cap</strong></li>
+</ul>
+</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[perl week1 cont]]></title>
+    <link href="http://pigfly.github.io/blog/2014/08/perl-week1-cont/"/>
+    <updated>2014-08-30T02:59:53+10:00</updated>
+    <id>http://pigfly.github.io/blog/2014/08/perl-week1-cont</id>
+    <content type="html"><![CDATA[<h2>SLP week1: A review</h2>
+
+<h3>Design Choice</h3>
+
+<ul>
+<li>Perl, is eager to give you the answer, and try its best to guess an answer for you!</li>
+<li>No reserved word, prefix with var distinguish data from build-ins (so developers can add more build-ins later on without conflicts)</li>
+<li>in Perl, values are all scalars, we don&rsquo;t have data type explicitly stating numerical value and string, <strong>perl will take longest path to legal values, evaluate  it, then quit</strong>
+
+<ul>
+<li>e.g. scalar conversion <code>(13+4)."love" = "17love"</code>, <code>"12god" / 3 = 4</code></li>
+<li>e.g. <code>"recursion" x 3.3</code> = <code>recursionrecursionrecursion</code></li>
+</ul>
+</li>
+</ul>
+
+
+<!--more-->
+
+
+<hr />
+
+<ul>
+<li><code>=~</code> stands for searching for pattern e.g. <code>=~ /a*/</code></li>
+<li><p><code>use warning;</code> will warn you dangerous thing, but will still execute all code without stopping</p></li>
+<li><p>Syntax</p>
+
+<ul>
+<li>every statement ends with a semi-colon</li>
+<li>make sure block statement wrapped with <code>{</code> and <code>}</code></li>
+<li>case sensitive</li>
+<li>reference: <code>$ref = \$whence;</code> the <code>\</code> is to get the address of $var</li>
+</ul>
+</li>
+</ul>
+
+
+<h3>Variable</h3>
+
+<ul>
+<li><p>Variable Define</p>
+
+<ul>
+<li>check if defined: <code>defined($var)</code> the var is defined but has empty value is different from var isn&rsquo;t defined  (like C)</li>
+<li>e.g. <code>$line = &lt;STDIN&gt;; if (defined($line)) {…}</code> good practice</li>
+<li>e.g. <code>chomp( $line = &lt;STDIN&gt; )</code> to get rid of new line symbol good practice</li>
+<li>to release a var, garbage collect a var, use <code>undef($var)</code></li>
+</ul>
+</li>
+<li><p>Scalar var</p>
+
+<ul>
+<li><code>_</code> in numerical var is ignored e.g. <code>$money = 2020_22_11</code></li>
+<li>V string, list ASCII value e.g. <code>$lang = [v]80.101.22.11</code> <code>[v]</code>:optional</li>
+</ul>
+</li>
+<li><p>Scope of var</p>
+
+<ul>
+<li><code>my</code>: the inner block, within the <code>{</code> and <code>}</code></li>
+<li><code>local</code>: a copy of var within the <code>{</code> and <code>}</code></li>
+<li><code>our</code>: global</li>
+<li>once var get out of scope, garbage collected, totally garbage collected var evaluated to 0 !</li>
+</ul>
+</li>
+</ul>
+
+
+<h3>Condition &amp; Loop</h3>
+
+<ul>
+<li><p>True and False</p>
+
+<ul>
+<li>False: <code>"0"</code>, empty string, undefined var, and 0</li>
+</ul>
+</li>
+<li><p>Operators in Conditions</p>
+
+<ul>
+<li>operator set the context, again, guess an answer for you</li>
+<li><code>&lt;=&gt;</code> and <code>cpm</code> are comparison, with signed result</li>
+</ul>
+</li>
+<li><p>Condition</p>
+
+<ul>
+<li><code>if/unless (x &gt; 50) { print; }</code>
+
+<ul>
+<li>even only one line statement needs braces, to avoid <em>C programming dangle else trap</em></li>
+</ul>
+</li>
+<li><code>print if/unless (x &gt; 50);</code>
+
+<ul>
+<li>e.g. for printing <code>print $a, " is $b", $c;</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Loop</p>
+
+<ul>
+<li><code>for (my $x = 0; $x &lt;= 0; $sp++) {</code></li>
+<li><code>for/foreach $x (@array) {</code></li>
+<li>switch: <code>SWITCH: { if (/perl/) { $perl = 1; last SWITCH;</code></li>
+</ul>
+</li>
+</ul>
+
+
+<h3>TUT</h3>
+
+<ul>
+<li>last index of list: <code>$# array</code>, #elements <code>scalar(@array)</code></li>
+<li>make sure var stated within scope e.g. <code>my $var</code></li>
+<li><code>my $min = $array[0]</code> and <code>for my $var (@array)</code></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[perl week2]]></title>
+    <link href="http://pigfly.github.io/blog/2014/08/perl-week2/"/>
+    <updated>2014-08-30T02:57:15+10:00</updated>
+    <id>http://pigfly.github.io/blog/2014/08/perl-week2</id>
+    <content type="html"><![CDATA[<h2>Perl w2</h2>
+
+<h3>List and Array</h3>
+
+<h4>List</h4>
+
+<ul>
+<li>init. one element in list. <code>$fred[0] = "do";</code></li>
+<li>maximum element index: <code>$index = $#fred</code></li>
+<li>last value of list: <code>$last = $fred[$#fred]</code> or <code>$last = $fred[-1]</code></li>
+<li>out-of-bound subscripts return undef, print nothing</li>
+<li>assigning beyond <code>$#list</code>, just stretches the list, filling the middle element with <code>undefined</code>. e.g. <code>$fred[20] = hello</code>, then $fred[1…19] is there, but undefined</li>
+</ul>
+
+
+<!--more-->
+
+
+<hr />
+
+<ul>
+<li>list e.g. : <code>(1,2,3)</code> or <code>("fred", 4.5)</code> or <code>(1..10)</code></li>
+<li>e.g. <code>@ar = (1,2,3,4) @ar[1..3] == 4</code> is true, because @ar[1..3] in this context, only return 4 which is 4 == 4</li>
+<li>tips: <code>qw|i am a idoit|</code> quote each element with <code>" "</code>, so you don&rsquo;t need to manually type all quotes.</li>
+<li><code>$"</code> list separator, e.g. <code>$" = "++", print @ar;</code> will print something like aa++bb++cc++dd</li>
+</ul>
+
+
+<hr />
+
+<ul>
+<li>assignment of list: <code>($a, $b) = ("a", 2)</code>
+
+<ul>
+<li>list built up before assignment, swap made easy: <code>($a, $b) = ($b, $a)</code></li>
+</ul>
+</li>
+<li><code>@</code>: all of the. <code>@rock = qw(rock1 rock2)</code></li>
+<li><code>@</code> can be nested. <code>@rock_more = ("diamond", @rock, "go");</code></li>
+<li>remove end of array [<strong>has side effect</strong>]: <code>$final = pop @num;</code></li>
+<li>append to end of array [<strong>has side effect</strong>]: <code>push @num, 10..15</code></li>
+<li>remove from beginning [<strong>has side effect</strong>]: <code>$first = shift @num;</code></li>
+<li><code>reverse</code> and <code>sort</code> [<strong>create copy</strong>]</li>
+</ul>
+
+
+<hr />
+
+<h4>Perl&rsquo;s Default Scalar: <code>$_</code></h4>
+
+<ul>
+<li>designer&rsquo;s choice, programmers don&rsquo;t need to think about var name and type.</li>
+<li>omit control var from beginning of loop, perl uses <code>$_</code> as default control var.</li>
+<li><code>for (1..10) { $_ += 10; }</code></li>
+<li><code>$_ = "perl ruby python"; print</code>, will print perl ruby python</li>
+<li><code>$_</code> is by default a global variable. However, as of perl v5.10.0, you can use a lexical version of $_ by declaring it in a file or in a block with <code>my</code></li>
+</ul>
+
+
+<h4>Scalar, List Context</h4>
+
+<ul>
+<li>designer&rsquo;s choice: <em>you can&rsquo;t identify the meaning of expression until you know the <strong>context</strong></em></li>
+<li>e.g. <code>@people = qw(me mum); @list = @people</code> list here is list, <code>#num = @people</code> the number of people, 2</li>
+<li>e.g. <code>123 + sth</code> is scalar context, because <code>+</code> is for scalar !</li>
+<li>e.g. <code>print @ar."\n"</code>: is scalar context, print size of array</li>
+<li>e.g. scalar (@ar) is scalar context, print size of array</li>
+<li>in a nutshell, if you see some operators belonging to list, then its list context, otherwise, its scalar context.</li>
+</ul>
+
+
+<hr />
+
+<h4>loop</h4>
+
+<ul>
+<li><code>for $item (@rock = qw(java ruby python)) { $item .= " lang" }</code>
+
+<ul>
+<li><code>$item</code> automatically become <code>my</code> var. any outer <code>$item</code> is unaffected</li>
+<li><code>$item</code> as pointer, assigning to <code>$item</code> affects the <code>@rock</code></li>
+<li><code>for (@rock) { $_ = "hard $_" }</code></li>
+<li><code>" "</code> evaluates all symbols in it, <code>' '</code> just treats as literal string</li>
+</ul>
+</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[perl week1]]></title>
+    <link href="http://pigfly.github.io/blog/2014/08/perl-week1/"/>
+    <updated>2014-08-30T02:57:10+10:00</updated>
+    <id>http://pigfly.github.io/blog/2014/08/perl-week1</id>
+    <content type="html"><![CDATA[<h2>Perl w1</h2>
+
+<ul>
+<li>a little thought on Perl
+
+<ul>
+<li>make sure you <strong>know the <em>context</em></strong> when writing perl program</li>
+<li>make sure you understand <strong>which type of var</strong> you are using
+
+<ul>
+<li>scalar always start with <code>$</code></li>
+<li>list always start with <code>@</code></li>
+<li>dict always start with <code>%</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+
+<!--more-->
+
+
+<hr />
+
+<h3>I/O</h3>
+
+<ul>
+<li>input from stdin, one line at a time: <code>while (&lt;STDIN&gt;) {…}</code>, this is a shorthand for <code>while (defined(&lt;STDIN&gt;) )</code></li>
+<li>input from a handler, store each line as one element in a array, <code>my @ar = &lt;file&gt;</code></li>
+<li>input from command-line argument. <code>while (&lt;&gt;) {…}</code> e.g. <code>./read.pl file1 file2 …</code> will get input from file1, then file2, then…</li>
+<li>special symbol: all arguments from command-line stores in <code>@ARGV</code>, a special array.</li>
+<li>get the output from external unix command: <code>open my $file, "ls -al |"</code> open a pipe</li>
+<li>send the handler to external unix command: <code>open $file, "| lpr"</code></li>
+<li><strong>Idiom</strong>
+
+<ul>
+<li>read file word by word
+
+<ul>
+<li>read entire file as string <code>use File::Slurp;</code></li>
+<li>read entire file as string <code>my $file = read_file($ARGV[0])</code></li>
+<li>split the string into words <code>my @words = split /[ \t\r\n]+/, $file</code></li>
+<li>iterate thru <code>for (@words) …</code></li>
+</ul>
+</li>
+<li>read file char by char
+
+<ul>
+<li>read entire file as string use <code>File::Slurp</code></li>
+<li>split the string into characters <code>my @chars = split //, $file</code></li>
+<li>iterate thru <code>for (@chars) …</code></li>
+<li>more efficient you can split char line by line
+
+<ul>
+<li><code>while &lt;$file&gt; {@chars = split //}</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+
+<h4>File handles</h4>
+
+<hr />
+
+<ul>
+<li><p>Filehandler is actually a pointer</p></li>
+<li><p>three default file handlers: <code>STDIN STDOUT STDERR</code></p></li>
+<li><p>the <code>open</code> tells Perl to ask os to open connection between your program and the outside world</p></li>
+<li><p><code>open</code> can open any connection to real world, e.g. socket, process, file, pipe&hellip;</p>
+
+<ul>
+<li>meaning, if you want to input from other text file rather than <code>STDIN</code>, use <code>open HANDLERNAME, "&lt;", "textfile"</code> first, then treat HANDLERNAME just as normal stdin.</li>
+<li>meaning, if you want to output to other text file rancher than <code>STDOUT</code>, use <code>open HANDLER, "&gt;", "textfile"</code> first, then treat HANDLER just as STDOUT.</li>
+<li>e.g. <code>open IN, "&lt;", "textfile"; for (@IN) {…}</code> read from file</li>
+<li>e.g. <code>open OUT, "&gt;", "textfile"; select OUT; print…;</code> write to file</li>
+<li>e.g. <code>open OUT, "&gt;", "textfile"; print OUT, "…";</code> write to file just use print</li>
+<li><code>open</code> will return true if successfully opened, otherwise false</li>
+</ul>
+</li>
+<li><p>special symbol: <code>$!</code> print the essential information about system error. e.g. <code>print "bad, $!"</code></p>
+
+<ul>
+<li><strong>Bad FileHandle</strong>: <code>my $ok = open LOG, "&gt;&gt;", "log.txt"; if(!ok) {…}</code></li>
+</ul>
+</li>
+</ul>
+
+
+<h4>Subroutine</h4>
+
+<hr />
+
+<ul>
+<li><p>invoke: <code>&amp;name(parameter1, parameter2,…)</code>: e.g. <code>$n = &amp;max(1,2)</code></p></li>
+<li><p><strong>mutable parameters</strong>, all vars get passed into sub are reference, meaning all mutable !</p></li>
+<li><p>special symbol: <code>@_</code>, all parameters passed into subroutine stored in special array <code>@_</code>, you can retrieve any value like normal. e.g. <code>$_[0]</code></p>
+
+<ul>
+<li><strong>important</strong>: these <code>$_[2]</code> values has nothing to do with <code>$_</code>, don&rsquo;t get confused.</li>
+<li>give name to default parameters: <code>($name1, $name2) = ($_[0], $_[1])</code> or <code>($name1, $name2, $name3…) = @_</code></li>
+</ul>
+</li>
+<li><p>return value: <strong>last expression evaluated</strong> will be return value!</p>
+
+<ul>
+<li>the <code>return</code> keyword isn&rsquo;t really necessary, for simplicity, you can omit, because always the last expression gets evaluated return its value</li>
+</ul>
+</li>
+<li><p>prototype: <code>sub add($$)</code> tell perl this sub need exactly two scalar. <code>sub divide($@)</code> tell perl this sub need exactly one scalar and one array</p></li>
+</ul>
+
+
+<h4>Hash</h4>
+
+<hr />
+
+<ul>
+<li><p>a little thought on Perl</p>
+
+<ul>
+<li>make sure you <strong>know the <em>context</em></strong> when writing perl program</li>
+<li>make sure you understand <strong>which type of var</strong> you are using
+
+<ul>
+<li>scalar always start with <code>$</code></li>
+<li>list always start with <code>@</code></li>
+<li>dict always start with <code>%</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>what is dict</p>
+
+<ul>
+<li>key-value pair.</li>
+<li>key: must be string.</li>
+<li>value: must be scalar var.</li>
+<li><strong>random access, no order guarantee !</strong></li>
+</ul>
+</li>
+<li><p>dict assignment</p>
+
+<ul>
+<li><code>my %dict; $dict{"s344"} = "alex";</code></li>
+<li><code>my %dict = qw(s344 alex s345 pcy);</code></li>
+<li><code>my %dict = ("s344", 2, "s355", 1);</code></li>
+<li><code>my %dict = ("s344"=&gt;2, "s444"=&gt;1);</code></li>
+<li>the <code>%dict</code> accepts a list, and convert elements to key-value pair, the example above may be converted like <em>&ldquo;(key,value,key,value)&rdquo;</em></li>
+</ul>
+</li>
+<li><p>dict as a whole</p>
+
+<ul>
+<li><code>my %dict; %rev = reverse %dict;</code> will get <em>&ldquo;(value=>key)&rdquo;</em> pairs</li>
+<li><code>@list = %dict; print "@list"</code> will print a <em>&ldquo;(key, value)&rdquo;</em> list</li>
+</ul>
+</li>
+<li><p>dict operation</p>
+
+<ul>
+<li><code>keys</code>: yield a list of all keys in hash. <code>my @k = keys %dict;</code></li>
+<li><code>values</code>: yield a list of all values in hash. <code>my @v = values %dict;</code></li>
+<li>iterate thru
+
+<ul>
+<li><code>each</code>: return next key-value pair. <code>while( my($k, $v) = each %hash ) {…}</code> <em>more efficient</em></li>
+<li><code>for (keys %dict) { my $v = $dict{$_} …}</code> <em>less efficient</em></li>
+<li>you should not delete a key out of a hash (or add keys) while iterating over it using each(), because this may confuse Perl: instead, <strong>creating a new flittered array or hash with push() or dict assignment while iterated thru</strong> <a href="http://perl-begin.org/tutorials/bad-elements/#modifying_iterated_array">SRC</a></li>
+</ul>
+</li>
+<li>delete key
+
+<ul>
+<li>delete: <code>delete $books{$person}</code> delete key-value pair, tricky is the return value is that key!</li>
+</ul>
+</li>
+<li>tips: <code>my $count = keys %dict;</code> return # of keys !</li>
+<li>tips: <code>print %dict</code> will print content of hash in an array.</li>
+</ul>
+</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

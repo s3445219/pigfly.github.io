@@ -1,0 +1,349 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>road to iOS 0.3 - Pigfly's learning notes</title>
+  <meta name="author" content="Alex">
+
+   
+  <meta name="description" content="Yet another static blog for writing down what I've learned...">
+  
+  <meta name="keywords" content="">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://pigfly.github.io/blog/2014/09/road-to-ios-0-dot-3">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Pigfly's learning notes" type="application/atom+xml">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap-collapse.js"></script>
+  <script src="/js/modernizr-2.0.js"></script>
+  <script src="/js/octopress.js" type="text/javascript"></script>
+  <script src="/js/application.js"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <div class="navbar navbar-inverse navbar-static-top">
+  	<div class="navbar-inner">
+  	  <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="fui-menu-24"></span>
+        </a>
+  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
+  	      <ul class="nav">
+    
+        <li ><a href="/">Home</a></li>
+    
+        <li ><a href="/blog/archives">Archives</a></li>
+    
+        <li ><a href="/about.html">about</a></li>
+    
+</ul>
+
+<ul class="nav pull-right">
+    
+    <li><a href="http://github.com/pigfly" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+    
+    
+    
+    <li><a href="http://linkedin.com/in/notalexjiang" title="Linkedin Profile"><i class="icon-linkedin-sign social-navbar"></i></a></li>
+    
+    
+    
+    
+    
+
+    
+</ul>
+
+  	    </div>
+  	  </div>
+  	</div>
+  </div>
+  <div class="container" id="main">
+      <div class="row-fluid">
+        <div id="content">
+          <div>
+<article class="hentry" role="article">
+  
+
+  <header>
+  <div class="jumbotron">
+    Road to iOS 0.3
+	<h5><!-- https://github.com/imathis/octopress/commit/73e540409ceb8bc18048b6a96a4b815fc303ea28 -->
+
+
+
+
+
+<i class="icon-calendar"></i> <time class='entry-date' datetime='2014-09-01T19:28:13+10:00'><span class='date'>2014-09-01</span> <span class='time'>19:28</span></time></h5>
+  </div>
+</header>
+  <div class="row-fluid">
+    <div class="span12">
+      <h2>NSNotification</h2>
+
+<h3>What is Notification</h3>
+
+<ul>
+<li>It&rsquo;s a message <strong>sent to one or more observing objects</strong> to <strong>inform</strong> them of <strong>an event</strong> in a program</li>
+<li>a way for an object that initiates or handles a program event to communicate with any number of objects that want to know about that event.</li>
+<li>A blind structured way of communication (<strong>notification doesn’t have to know what those observers are</strong>)</li>
+<li>A broadcast radio station model in MVC</li>
+<li>A very similar idea like the <strong>event listener model</strong> in Java</li>
+</ul>
+
+
+<!--more-->
+
+
+<h3>How does Notification work</h3>
+
+<ul>
+<li>an object post a notification to notification center</li>
+<li>notification center broadcast the event</li>
+<li>event goes to the observer who registers itself at notification center</li>
+</ul>
+
+
+<p><img src="/images/ios/notificationcenter.png" title="UIViewController Lifecycle" ></p>
+
+<h3>Benefit of Broadcast Model in Notification</h3>
+
+<blockquote><p>The object sending (or posting) the notification doesn’t have to know what those observers are. Notification is thus a powerful mechanism for attaining coordination and cohesion in a program. It reduces the need for strong dependencies between objects in a program (such dependencies would reduce the reusability of those objects).</p><footer><strong>@developer.apple</strong> <cite><a href='https://developer.apple.com/library/mac/documentation/General/Conceptual/DevPedia-CocoaCore/Notification.html#//apple_ref/doc/uid/TP40008195-CH35'>Notification</a></cite></footer></blockquote>
+
+
+<h2><br></h2>
+
+<h3>Get default notification</h3>
+
+<p>Each running Cocoa program has a default notification center. You typically don’t create your own.</p>
+
+<figure class='code'><figcaption><span>get default notification</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">[</span><span class="bp">NSNotificationCenter</span> <span class="n">defaultCenter</span><span class="p">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Register at notification center</h3>
+
+<p>Register observer(yourself) at notification center if you want to listen to broadcast, In this example, we are listening to system broadcast(UIContentSizeCategoryDidChangeNotification)</p>
+
+<figure class='code'><figcaption><span>register at notification</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="c1">// the oberserver here is controller itself</span>
+</span><span class='line'><span class="c1">// object : whos change you&#39;re interested in. Nil, meaning anyone can send notification to controller</span>
+</span><span class='line'><span class="c1">// name is the name of the station</span>
+</span><span class='line'><span class="c1">// selector: once you receive notification, what you will do</span>
+</span><span class='line'><span class="p">[[</span><span class="bp">NSNotificationCenter</span> <span class="n">defaultCenter</span><span class="p">]</span> <span class="nl">addObserver</span><span class="p">:</span><span class="nb">self</span>
+</span><span class='line'>                                         <span class="nl">selector</span><span class="p">:</span><span class="k">@selector</span><span class="p">(</span><span class="nl">preferredFontsChanged</span><span class="p">:)</span>
+</span><span class='line'>                                             <span class="nl">name</span><span class="p">:</span><span class="n">UIContentSizeCategoryDidChangeNotification</span>
+</span><span class='line'>                                           <span class="nl">object</span><span class="p">:</span><span class="nb">nil</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// the method which you create to handle the recieved notification</span>
+</span><span class='line'><span class="p">-(</span><span class="kt">void</span><span class="p">)</span><span class="nf">preferredFontsChanged:</span><span class="p">(</span><span class="bp">NSNotification</span> <span class="o">*</span><span class="p">)</span><span class="nv">notification</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="p">[</span><span class="nb">self</span> <span class="n">usePreferredFonts</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">-(</span><span class="kt">void</span><span class="p">)</span><span class="nf">usePreferredFonts</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="p">...</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Remove observer at notification center</h3>
+
+<p>Failure to remove yourself can sometimes result in crashers.</p>
+
+<figure class='code'><figcaption><span>remove yourself at notification</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">[[</span><span class="bp">NSNotificationCenter</span> <span class="n">defaultCenter</span><span class="p">]</span> <span class="nl">removeObserver</span><span class="p">:</span><span class="n">someObserver</span><span class="p">];</span>
+</span><span class='line'><span class="c1">// or</span>
+</span><span class='line'><span class="c1">// use this for best practise, since you may listen to several stations at same time</span>
+</span><span class='line'><span class="c1">// simply remove yourself as observer will result in failure of listening to other stations.</span>
+</span><span class='line'><span class="p">[[</span><span class="bp">NSNotificationCenter</span> <span class="n">defaultCenter</span><span class="p">]</span> <span class="nl">removeObserver</span><span class="p">:</span><span class="nb">self</span> <span class="nl">name</span><span class="p">:</span><span class="n">UIContentSizeCategoryDidChangeNotification</span> <span class="nl">object</span><span class="p">:</span><span class="nb">nil</span><span class="p">];</span>
+</span><span class='line'><span class="c1">// or put the dealloc in viewWillDisappear</span>
+</span><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">dealloc</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="c1">// be careful in this method! can’t access properties! you are almost gone from heap!</span>
+</span><span class='line'>    <span class="p">[[</span><span class="bp">NSNotificationCenter</span> <span class="n">defaultCenter</span><span class="p">]</span> <span class="nl">removeObserver</span><span class="p">:</span><span class="nb">self</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2><br></h2>
+
+<h3>Reference</h3>
+
+<ol>
+<li>Stanford iOS 7 development</li>
+<li><a href="https://developer.apple.com/library/mac/navigation/">Mac Developer Library</a></li>
+<li><a href="https://developer.apple.com/library/mac/documentation/General/Conceptual/DevPedia-CocoaCore/Notification.html#//apple_ref/doc/uid/TP40008195-CH35">Cocoa Core Competencies</a></li>
+</ol>
+
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    <hr>
+    
+    <div class="row-fluid">
+      
+      <div class="span6">
+        <p class="meta">
+        
+        
+
+
+
+  <a href="/blog/categories/ios/"><span class="badge">ios</span></a>
+
+
+
+
+        </p>
+      </div>
+      
+      <div class="span6 social-sharing">
+        <div class="sharing">
+  <div class="addthis_toolbox addthis_default_style ">
+  
+  
+  <a class="addthis_button_tweet"></a>
+  
+  
+  <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+
+      </div>
+      
+      
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span12">
+        <p class="meta">
+          
+            <a class="basic-alignment left" href="/blog/2014/09/road-to-ios-0-dot-2/" title="Previous Post: road to iOS 0.2">&laquo; road to iOS 0.2</a>
+          
+          
+            <a class="basic-alignment right" href="/blog/2014/09/road-to-ios-0-dot-4/" title="Next Post: road to iOS 0.4">road to iOS 0.4 &raquo;</a>
+          
+        </p>
+      </div>
+    </div>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+
+
+        </div>
+      </div>
+      <div class="row-fluid">
+        <footer class="footer-page" role="contentinfo">
+          <p>
+  Copyright &copy; 2015 - <a href="http://pigfly.io">Alex</a> -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  - Under Creative Commons <a href="http://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>
+</p>
+
+
+        </footer>
+      </div>
+  </div>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'pigfly';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://pigfly.github.io/blog/2014/09/road-to-ios-0-dot-3/';
+        var disqus_url = 'http://pigfly.github.io/blog/2014/09/road-to-ios-0-dot-3/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

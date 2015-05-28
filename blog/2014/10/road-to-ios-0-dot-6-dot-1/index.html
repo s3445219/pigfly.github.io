@@ -1,0 +1,384 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>road to iOS 0.6.1 - Pigfly's learning notes</title>
+  <meta name="author" content="Alex">
+
+   
+  <meta name="description" content="Yet another static blog for writing down what I've learned...">
+  
+  <meta name="keywords" content="">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://pigfly.github.io/blog/2014/10/road-to-ios-0-dot-6-dot-1">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Pigfly's learning notes" type="application/atom+xml">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap-collapse.js"></script>
+  <script src="/js/modernizr-2.0.js"></script>
+  <script src="/js/octopress.js" type="text/javascript"></script>
+  <script src="/js/application.js"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <div class="navbar navbar-inverse navbar-static-top">
+  	<div class="navbar-inner">
+  	  <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="fui-menu-24"></span>
+        </a>
+  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
+  	      <ul class="nav">
+    
+        <li ><a href="/">Home</a></li>
+    
+        <li ><a href="/blog/archives">Archives</a></li>
+    
+        <li ><a href="/about.html">about</a></li>
+    
+</ul>
+
+<ul class="nav pull-right">
+    
+    <li><a href="http://github.com/pigfly" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+    
+    
+    
+    <li><a href="http://linkedin.com/in/notalexjiang" title="Linkedin Profile"><i class="icon-linkedin-sign social-navbar"></i></a></li>
+    
+    
+    
+    
+    
+
+    
+</ul>
+
+  	    </div>
+  	  </div>
+  	</div>
+  </div>
+  <div class="container" id="main">
+      <div class="row-fluid">
+        <div id="content">
+          <div>
+<article class="hentry" role="article">
+  
+
+  <header>
+  <div class="jumbotron">
+    Road to iOS 0.6.1
+	<h5><!-- https://github.com/imathis/octopress/commit/73e540409ceb8bc18048b6a96a4b815fc303ea28 -->
+
+
+
+
+
+<i class="icon-calendar"></i> <time class='entry-date' datetime='2014-10-14T10:14:19+11:00'><span class='date'>2014-10-14</span> <span class='time'>10:14</span></time></h5>
+  </div>
+</header>
+  <div class="row-fluid">
+    <div class="span12">
+      <h1>All about Nib file</h1>
+
+<h2>Anatomy of Nib file</h2>
+
+<ul>
+<li><strong>User interface</strong> objects(Visual elements)</li>
+<li><strong>File Owner</strong>, placeholder, a <strong>controller</strong> object that is responsible for contents of nib file.
+
+<ul>
+<li>Usually you will want to connect a controller to the nib file, so that controller&rsquo;s <strong>view</strong> can be connected with nib&rsquo;s top-level object</li>
+<li>However, if you want to break a view into different nib components,  then assemble them together in one controller, you can leave this <strong>File Owner</strong> blank, and load all nibs in your controller.</li>
+</ul>
+</li>
+<li><strong>First Responder</strong>, placeholder, the first object in your app&rsquo;s responder chain.
+
+<ul>
+<li>The UIKit framework automatically set first responder for you</li>
+</ul>
+</li>
+</ul>
+
+
+<!--more-->
+
+
+<h2>Nib Object Life Cycle</h2>
+
+<p>The nib-loading code instantiates the objects, configures them, and reestablishes any inter-object connections that you created in your nib file.
+When you use methods of <strong>NSBundle</strong> to load and instantiate the objects in nib file, the nib-loading code does following:</p>
+
+<ol>
+<li><p>Load the archived nib file into memory</p></li>
+<li><p>Unarchive the nib file, instantiates the objects</p>
+
+<ul>
+<li>In iOS, any object that conforms to the NSCoding protocol is initialized using the <strong>initWithCoder:</strong>. This includes all subclasses of UIView and UIViewController whether they are part of the default Xcode library or custom classes you define.</li>
+<li>The reason using <strong>initWithCoder</strong> is that they are available in Xcode library (System knows how to instantiate)</li>
+<li>Custom objects other than those described in the preceding steps receive an <strong>init</strong> message. (Which may lead to init chain)</li>
+</ul>
+</li>
+<li><p>It <strong>reestablishes all connections</strong> (actions, outlets, and bindings) between objects in the nib file.</p>
+
+<ul>
+<li><strong>Outlet connections</strong>
+
+<ul>
+<li>The nib-loading code uses the <strong>setValue:forKey:</strong> to reconnect each outlet</li>
+<li>Setting an outlet also generates a <strong>key-value observing (KVO)</strong> notification for any registered observers.
+
+<ul>
+<li>That&rsquo;s why if sometimes you forget to connect oulet in your code to nib file, it will prompt key-value pair not matched !</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Action connections</strong>
+
+<ul>
+<li>In iOS, the nib-loading code uses the <strong>addTarget:action:forControlEvents:</strong> method of the UIControl object to configure the action. If the target is nil, the action is handled by the responder chain.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>It sends an <strong>awakeFromNib</strong> message to the appropriate objects in the nib file</p>
+
+<ul>
+<li>In iOS, this message is sent only to the interface objects that were instantiated by the nib-loading code. It is not sent to File’s Owner, First Responder, or any other placeholder objects.</li>
+<li>That means, you can also put view init code in <strong>awakeFromNib</strong> in your custom view, since interface objects are already instantiated.</li>
+</ul>
+</li>
+</ol>
+
+
+<figure class='code'><figcaption><span>configure view in awakeFromNib in YourView.m</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">awakeFromNib</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nb">self</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="c1">// do view init</span>
+</span><span class='line'>      <span class="nb">self</span><span class="p">.</span><span class="n">button</span><span class="p">.</span><span class="n">layer</span> <span class="nl">setBorderWidth</span><span class="p">:</span><span class="mf">2.0f</span><span class="p">];</span>
+</span><span class='line'>      <span class="p">...</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><br></p>
+
+<p>Be mindful that if you need to configure the objects in your nib file further at load time, the most appropriate time to do so is <strong>after your nib-loading call returns</strong>. At that point, all of the objects are created, initialized, and ready for use.</p>
+
+<figure class='code'><figcaption><span>configure objects in nib files after nib is loaded in controller</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">loadView</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="c1">// load nib file</span>
+</span><span class='line'>  <span class="bp">NSArray</span> <span class="o">*</span><span class="n">nibs</span> <span class="o">=</span> <span class="p">[[</span><span class="bp">NSBundle</span> <span class="n">mainBundle</span><span class="p">]</span> <span class="nl">loadNibNamed</span><span class="p">:</span><span class="s">@&quot;yourNib&quot;</span>
+</span><span class='line'>                                 <span class="nl">owner</span><span class="p">:</span><span class="nb">self</span>
+</span><span class='line'>                               <span class="nl">options</span><span class="p">:</span><span class="nb">nil</span><span class="p">];</span>
+</span><span class='line'>  <span class="n">YourOwnView</span> <span class="o">*</span><span class="n">first</span> <span class="o">=</span> <span class="p">[</span><span class="n">nibs</span> <span class="n">firstObject</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// configure the view</span>
+</span><span class='line'>  <span class="p">...</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nb">self</span><span class="p">.</span><span class="n">view</span> <span class="o">=</span> <span class="n">first</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>  
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2><br></h2>
+
+<h3>Load custom view (nib file + UIView file)</h3>
+
+<ul>
+<li>Steps for loading custom view
+
+<ul>
+<li>create a view using interface builder(i.e. create xib file)</li>
+<li>create your view controller for this xib (if don&rsquo;t leave File Owner empty)</li>
+<li>create subclass of <strong>UIView</strong>, e.g. YourOwnView</li>
+<li><strong>change the custom class view attribute for xib to YourOwnView</strong></li>
+<li>implement <strong>awakeFromNib</strong> to custom initialise your elements in nib</li>
+<li><strong>call loadNibNamed: at appropriate time in your controller to let nib-loading cycle go through</strong></li>
+</ul>
+</li>
+</ul>
+
+
+<p>A common mistake is to call <strong>initWithFrame</strong> in controller, which only affects those view created pure programmatically. It has nothing to do with Your nib file. You need to call <strong>loadNibNamed</strong> in controller at least once to give your nib file a chance to finish nib-loading life cycle !</p>
+
+<h2>Nib Anatomy Mindnode</h2>
+
+<p><img src="/images/ios/nib_anatomy.png" width="805" height="585" title="Nib Anatomy" ></p>
+
+<h2><br></h2>
+
+<h3>Reference</h3>
+
+<ol>
+<li>Stanford iOS 7 development</li>
+<li><a href="https://developer.apple.com/library/mac/navigation/">Mac Developer Library</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/cocoa/conceptual/loadingresources/cocoanibs/cocoanibs.html">Manage Resources in OSX</a></li>
+</ol>
+
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    <hr>
+    
+    <div class="row-fluid">
+      
+      <div class="span6">
+        <p class="meta">
+        
+        
+
+
+
+  <a href="/blog/categories/ios/"><span class="badge">ios</span></a>
+
+
+
+
+        </p>
+      </div>
+      
+      <div class="span6 social-sharing">
+        <div class="sharing">
+  <div class="addthis_toolbox addthis_default_style ">
+  
+  
+  <a class="addthis_button_tweet"></a>
+  
+  
+  <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+
+      </div>
+      
+      
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span12">
+        <p class="meta">
+          
+            <a class="basic-alignment left" href="/blog/2014/10/road-to-ios-0-dot-7/" title="Previous Post: road to iOS 0.7">&laquo; road to iOS 0.7</a>
+          
+          
+            <a class="basic-alignment right" href="/blog/2014/11/road-to-ios-0-dot-x/" title="Next Post: road to iOS 0.x">road to iOS 0.x &raquo;</a>
+          
+        </p>
+      </div>
+    </div>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+
+
+        </div>
+      </div>
+      <div class="row-fluid">
+        <footer class="footer-page" role="contentinfo">
+          <p>
+  Copyright &copy; 2015 - <a href="http://pigfly.io">Alex</a> -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  - Under Creative Commons <a href="http://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>
+</p>
+
+
+        </footer>
+      </div>
+  </div>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'pigfly';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://pigfly.github.io/blog/2014/10/road-to-ios-0-dot-6-dot-1/';
+        var disqus_url = 'http://pigfly.github.io/blog/2014/10/road-to-ios-0-dot-6-dot-1/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

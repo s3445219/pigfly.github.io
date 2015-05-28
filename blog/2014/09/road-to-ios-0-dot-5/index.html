@@ -1,0 +1,402 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>road to iOS 0.5 - Pigfly's learning notes</title>
+  <meta name="author" content="Alex">
+
+   
+  <meta name="description" content="Yet another static blog for writing down what I've learned...">
+  
+  <meta name="keywords" content="">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://pigfly.github.io/blog/2014/09/road-to-ios-0-dot-5">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Pigfly's learning notes" type="application/atom+xml">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap-collapse.js"></script>
+  <script src="/js/modernizr-2.0.js"></script>
+  <script src="/js/octopress.js" type="text/javascript"></script>
+  <script src="/js/application.js"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <div class="navbar navbar-inverse navbar-static-top">
+  	<div class="navbar-inner">
+  	  <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="fui-menu-24"></span>
+        </a>
+  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
+  	      <ul class="nav">
+    
+        <li ><a href="/">Home</a></li>
+    
+        <li ><a href="/blog/archives">Archives</a></li>
+    
+        <li ><a href="/about.html">about</a></li>
+    
+</ul>
+
+<ul class="nav pull-right">
+    
+    <li><a href="http://github.com/pigfly" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+    
+    
+    
+    <li><a href="http://linkedin.com/in/notalexjiang" title="Linkedin Profile"><i class="icon-linkedin-sign social-navbar"></i></a></li>
+    
+    
+    
+    
+    
+
+    
+</ul>
+
+  	    </div>
+  	  </div>
+  	</div>
+  </div>
+  <div class="container" id="main">
+      <div class="row-fluid">
+        <div id="content">
+          <div>
+<article class="hentry" role="article">
+  
+
+  <header>
+  <div class="jumbotron">
+    Road to iOS 0.5
+	<h5><!-- https://github.com/imathis/octopress/commit/73e540409ceb8bc18048b6a96a4b815fc303ea28 -->
+
+
+
+
+
+<i class="icon-calendar"></i> <time class='entry-date' datetime='2014-09-26T01:14:19+10:00'><span class='date'>2014-09-26</span> <span class='time'>01:14</span></time></h5>
+  </div>
+</header>
+  <div class="row-fluid">
+    <div class="span12">
+      <h2>Interface builder, Connections, Initializers</h2>
+
+<h3>Interface builder</h3>
+
+<ul>
+<li><strong>StoryBoard</strong>
+
+<ul>
+<li>easy way, less flexible, hard to do programmatically</li>
+</ul>
+</li>
+<li><strong>XIB</strong>
+
+<ul>
+<li>create a view only, easy to do programmatically</li>
+</ul>
+</li>
+</ul>
+
+
+<!--more-->
+
+
+<h4>What is XIB</h4>
+
+<ul>
+<li>XIB stands for XML Interface Builder</li>
+<li><strong>Object editor</strong>, you create and configure objects like buttons and controllers, save them into archive called XIB</li>
+</ul>
+
+
+<h4>What is NIB</h4>
+
+<ul>
+<li>When you build app, the XIB file is compiled into NIB file for efficiency</li>
+<li>Then NIB file is copied into app&rsquo;s <em>bundle</em></li>
+<li><strong>Bundle</strong>, a directory contains app&rsquo;s executable and any resources</li>
+</ul>
+
+
+<h2><br></h2>
+
+<h3>Connections</h3>
+
+<ul>
+<li>Let one object know where another object is in memory, so that two objects can <strong>communicate</strong></li>
+<li>More precisely,  often between controller and view communication
+
+<ul>
+<li><strong>outlets</strong>, as property, no need to know who is sender</li>
+<li><strong>actions</strong>, as implementation, sometimes needed to know who is sender, so that you can perform desired action</li>
+</ul>
+</li>
+</ul>
+
+
+<h4>Connect your controller to appDelegate</h4>
+
+<ul>
+<li>To get your interface on screen, you have to connect your view controller to app&rsquo;s controller: <strong>appDelegate</strong></li>
+<li>That means, you need to make your controller as <em>root controller</em> of this window.</li>
+<li><strong>appDelegate</strong>, manages a single top-level <strong>UIWindow</strong> for the application.</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>make your controller as root controller </span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">BOOL</span><span class="p">)</span><span class="nf">application:</span><span class="p">(</span><span class="bp">UIApplication</span> <span class="o">*</span><span class="p">)</span><span class="nv">application</span>
+</span><span class='line'><span class="nf">didFinishLaunchingWithOptions:</span><span class="p">(</span><span class="bp">NSDictionary</span> <span class="o">*</span><span class="p">)</span><span class="nv">launchOptions</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>        <span class="c1">// init window</span>
+</span><span class='line'>        <span class="p">....</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// init your controller, set as root</span>
+</span><span class='line'>        <span class="n">YourViewController</span> <span class="o">*</span><span class="n">vc</span> <span class="o">=</span> <span class="p">[[</span><span class="n">YourViewController</span> <span class="n">alloc</span><span class="p">]</span> <span class="n">init</span><span class="p">];</span>
+</span><span class='line'>        <span class="nb">self</span><span class="p">.</span><span class="n">window</span><span class="p">.</span><span class="n">rootViewController</span> <span class="o">=</span> <span class="n">vc</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">YES</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2><br></h2>
+
+<h3>Initializers</h3>
+
+<ul>
+<li>begins with word <strong>init</strong>, name convention only</li>
+<li><strong>designated initializer</strong>,  no matter how many init methods are,  one method is chosen as
+designated, it makes sure that every instance variable of an object is valid.</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>pattern for designated init</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">instancetype</span><span class="p">)</span><span class="nf">initWithxxx:</span><span class="p">(</span><span class="n">yyy</span><span class="p">)</span><span class="nv">zzz</span>
+</span><span class='line'>               <span class="nf">xxx:</span><span class="p">(</span><span class="n">yyy</span><span class="p">)</span><span class="nv">zzz</span><span class="p">...</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nb">self</span> <span class="o">=</span> <span class="p">[</span><span class="nb">super</span> <span class="n">init</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nb">self</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="p">...</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="nb">self</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>Controller Initializer</h4>
+
+<p>When an instance of controller is created, it is sent the message <strong>initWithNibName:bundle</strong></p>
+
+<figure class='code'><figcaption><span>controller init</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">instancetype</span><span class="p">)</span><span class="nf">initWithNibName:</span><span class="p">(</span><span class="bp">NSString</span> <span class="o">*</span><span class="p">)</span><span class="nv">nibNameOrNil</span>
+</span><span class='line'>              <span class="nf">bundle:</span><span class="p">(</span><span class="bp">NSBundle</span> <span class="o">*</span><span class="p">)</span><span class="nv">nibBundleOrNil</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nb">self</span> <span class="o">=</span> <span class="p">[</span><span class="nb">super</span> <span class="nl">initWithNibName</span><span class="p">:</span><span class="n">nibNameOrNil</span> <span class="nl">bundle</span><span class="p">:</span><span class="n">nibBundleOrNil</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nb">self</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="p">....</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="nb">self</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>Instancetype</h4>
+
+<ul>
+<li>Why not return specific type ?  all about polymorphism</li>
+<li>Deal with the problem if the class was subclassed but sending this init message to subclass :(</li>
+<li>Return the type of the caller</li>
+</ul>
+
+
+<h2><br></h2>
+
+<h3>Reference</h3>
+
+<ol>
+<li>Stanford iOS 7 development</li>
+<li><a href="https://developer.apple.com/library/mac/navigation/">Mac Developer Library</a></li>
+<li><a href="http://www.bignerdranch.com/">Big Nerd Ranch</a></li>
+</ol>
+
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    <hr>
+    
+    <div class="row-fluid">
+      
+      <div class="span6">
+        <p class="meta">
+        
+        
+
+
+
+  <a href="/blog/categories/ios/"><span class="badge">ios</span></a>
+
+
+
+
+        </p>
+      </div>
+      
+      <div class="span6 social-sharing">
+        <div class="sharing">
+  <div class="addthis_toolbox addthis_default_style ">
+  
+  
+  <a class="addthis_button_tweet"></a>
+  
+  
+  <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+
+      </div>
+      
+      
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span12">
+        <p class="meta">
+          
+            <a class="basic-alignment left" href="/blog/2014/09/road-to-ios-0-dot-4/" title="Previous Post: road to iOS 0.4">&laquo; road to iOS 0.4</a>
+          
+          
+            <a class="basic-alignment right" href="/blog/2014/10/road-to-ios-0-dot-6/" title="Next Post: road to iOS 0.6">road to iOS 0.6 &raquo;</a>
+          
+        </p>
+      </div>
+    </div>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+
+
+        </div>
+      </div>
+      <div class="row-fluid">
+        <footer class="footer-page" role="contentinfo">
+          <p>
+  Copyright &copy; 2015 - <a href="http://pigfly.io">Alex</a> -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  - Under Creative Commons <a href="http://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>
+</p>
+
+
+        </footer>
+      </div>
+  </div>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'pigfly';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://pigfly.github.io/blog/2014/09/road-to-ios-0-dot-5/';
+        var disqus_url = 'http://pigfly.github.io/blog/2014/09/road-to-ios-0-dot-5/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

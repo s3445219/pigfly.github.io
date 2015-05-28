@@ -1,0 +1,421 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>road to iOS 0.7 - Pigfly's learning notes</title>
+  <meta name="author" content="Alex">
+
+   
+  <meta name="description" content="Yet another static blog for writing down what I've learned...">
+  
+  <meta name="keywords" content="">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://pigfly.github.io/blog/2014/10/road-to-ios-0-dot-7">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Pigfly's learning notes" type="application/atom+xml">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap-collapse.js"></script>
+  <script src="/js/modernizr-2.0.js"></script>
+  <script src="/js/octopress.js" type="text/javascript"></script>
+  <script src="/js/application.js"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <div class="navbar navbar-inverse navbar-static-top">
+  	<div class="navbar-inner">
+  	  <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="fui-menu-24"></span>
+        </a>
+  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
+  	      <ul class="nav">
+    
+        <li ><a href="/">Home</a></li>
+    
+        <li ><a href="/blog/archives">Archives</a></li>
+    
+        <li ><a href="/about.html">about</a></li>
+    
+</ul>
+
+<ul class="nav pull-right">
+    
+    <li><a href="http://github.com/pigfly" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+    
+    
+    
+    <li><a href="http://linkedin.com/in/notalexjiang" title="Linkedin Profile"><i class="icon-linkedin-sign social-navbar"></i></a></li>
+    
+    
+    
+    
+    
+
+    
+</ul>
+
+  	    </div>
+  	  </div>
+  	</div>
+  </div>
+  <div class="container" id="main">
+      <div class="row-fluid">
+        <div id="content">
+          <div>
+<article class="hentry" role="article">
+  
+
+  <header>
+  <div class="jumbotron">
+    Road to iOS 0.7
+	<h5><!-- https://github.com/imathis/octopress/commit/73e540409ceb8bc18048b6a96a4b815fc303ea28 -->
+
+
+
+
+
+<i class="icon-calendar"></i> <time class='entry-date' datetime='2014-10-12T13:14:19+11:00'><span class='date'>2014-10-12</span> <span class='time'>13:14</span></time></h5>
+  </div>
+</header>
+  <div class="row-fluid">
+    <div class="span12">
+      <h1>View Controllers</h1>
+
+<h2>View Controller Essentials</h2>
+
+<ul>
+<li>An instance of a subclass of <strong>UIViewController</strong></li>
+<li>It manages a <strong>view hierarchy</strong></li>
+<li>It&rsquo;s responsible for creating view objects, handling events</li>
+</ul>
+
+
+<!--more-->
+
+
+<h2>View in View Controller</h2>
+
+<ul>
+<li>An important property <strong>view</strong></li>
+<li>It&rsquo;s the <strong>root</strong> of view controller&rsquo;s view hierarchy</li>
+<li>Two ways of creating its view hierarchy :
+
+<ul>
+<li>Programmatically, override the <strong>UIViewController</strong> method <strong>loadView</strong></li>
+<li>Interface Builder, loading a NIB file</li>
+</ul>
+</li>
+</ul>
+
+
+<h3>Create view programmatically</h3>
+
+<p>In your own view controller class(which can be created by inheriting <strong>UIViewController</strong>), override the <strong>loadview</strong>:</p>
+
+<figure class='code'><figcaption><span>create view in view controller's loadView method </span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">loadView</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="c1">// 1. specify the view&#39;s frame</span>
+</span><span class='line'>  <span class="c1">// could use other Rect like full screen</span>
+</span><span class='line'>  <span class="c1">// [UIScreen mainScreen].bounds</span>
+</span><span class='line'>  <span class="bp">CGRect</span> <span class="n">firstFrame</span> <span class="o">=</span> <span class="n">CGRectMake</span><span class="p">(</span><span class="mi">160</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">105</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// 2. init an instance of view</span>
+</span><span class='line'>  <span class="n">YourOwnView</span> <span class="o">*</span><span class="n">firstView</span> <span class="o">=</span> <span class="p">[[</span><span class="n">YourOwnView</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithFrame</span><span class="p">:</span><span class="n">firstFrame</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// 3. configure the  view</span>
+</span><span class='line'>  <span class="n">firstView</span><span class="p">.</span><span class="n">backgroundColor</span> <span class="o">=</span> <span class="p">[</span><span class="bp">UIColor</span> <span class="n">greenColor</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// 4. set the view in view controller to this view</span>
+</span><span class='line'>  <span class="c1">// sometimes you use addSubView if you have multiple views</span>
+</span><span class='line'>  <span class="c1">// e.g. [firstView addSubview: secondView];</span>
+</span><span class='line'>  <span class="nb">self</span><span class="p">.</span><span class="n">view</span> <span class="o">=</span> <span class="n">firstView</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>However, the code above is for creating view hierarchy in view controller only,
+it has nothing to do with the actual view appeared on the screen. To connect a
+view in view controller with screen, you need to use <strong>UIwindow</strong>&rsquo;s <strong>setRootViewController</strong>.</p>
+
+<figure class='code'><figcaption><span>set root view controller in appDelegate.m </span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">BOOL</span><span class="p">)</span><span class="nf">application:</span><span class="p">(</span><span class="bp">UIApplication</span> <span class="o">*</span><span class="p">)</span><span class="nv">application</span> <span class="nf">didFinishLaunchingWithOptions:</span><span class="p">(</span><span class="bp">NSDictionary</span> <span class="o">*</span><span class="p">)</span><span class="nv">launchOptions</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nb">self</span><span class="p">.</span><span class="n">window</span> <span class="o">=</span> <span class="p">[[</span><span class="bp">UIWindow</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithFrame</span><span class="p">:[[</span><span class="bp">UIScreen</span> <span class="n">mainScreen</span><span class="p">]</span> <span class="n">bounds</span><span class="p">]];</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// init your view controller</span>
+</span><span class='line'>  <span class="n">YourOwnViewController</span> <span class="o">*</span><span class="n">vc</span> <span class="o">=</span> <span class="p">[</span><span class="n">YourOwnViewController</span> <span class="n">alloc</span><span class="p">]</span> <span class="n">init</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// set the window&#39;s root controller</span>
+</span><span class='line'>  <span class="nb">self</span><span class="p">.</span><span class="n">window</span><span class="p">.</span><span class="n">rootViewController</span> <span class="o">=</span> <span class="n">vc</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nb">self</span><span class="p">.</span><span class="n">window</span><span class="p">.</span><span class="n">backgroundColor</span> <span class="o">=</span> <span class="p">[</span><span class="bp">UIColor</span> <span class="n">whiteColor</span><span class="p">];</span>
+</span><span class='line'>  <span class="p">[</span><span class="nb">self</span><span class="p">.</span><span class="n">window</span> <span class="n">makeKeyAndVisible</span><span class="p">];</span>
+</span><span class='line'>  <span class="k">return</span> <span class="nb">YES</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Create view use XIB</h3>
+
+<ul>
+<li>Steps for creating view for view controller using XIB:
+
+<ul>
+<li>create a view using interface builder(i.e. create xib file)</li>
+<li>create your view controller for this xib</li>
+<li><strong>make sure your xib&rsquo;s name is named the same as your view controller</strong> (xcode uses this to automatically load nib file i.e. init the view)</li>
+<li><strong>connect</strong> your controller to your xib(e.g. File&rsquo;s owner, IBOutlet, IBAction)</li>
+</ul>
+</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>create view controller according to your xib file </span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="k">@interface</span> <span class="nc">YourOwnViewController</span> <span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// IBOutlet is typedef as void, it&#39;s only for xcode to identify the specific element in xib</span>
+</span><span class='line'><span class="c1">// Pay attention to the weak decorator, follow parent-child rule</span>
+</span><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="k">nonatomic</span><span class="p">,</span> <span class="k">weak</span><span class="p">)</span> <span class="kt">IBOutlet</span> <span class="bp">UIDatePicker</span> <span class="o">*</span><span class="n">datePicker</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@end</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// IBAction is typedef as void, it&#39;s only for xcode to identify the specific action in xib</span>
+</span><span class='line'><span class="o">-</span> <span class="p">(</span><span class="kt">IBAction</span><span class="p">)</span><span class="nl">addReminder</span><span class="p">:(</span><span class="kt">id</span><span class="p">)</span><span class="n">sender</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="bp">NSDate</span> <span class="o">*</span><span class="n">date</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="n">datePicker</span><span class="p">.</span><span class="n">date</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">NSLog</span><span class="p">(</span><span class="s">@&quot;Setting a reminder for %@&quot;</span><span class="p">,</span> <span class="n">date</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>After you get your xib and view controller done, you may now <strong>connect these two together</strong>.</p>
+
+<ul>
+<li>Connect to File&rsquo;s Owner in xib
+
+<ul>
+<li>use identity inspector to change the view controller class to your own class</li>
+</ul>
+</li>
+<li>Connect outlet and actions
+
+<ul>
+<li>right click on File&rsquo;s Owner, drag-and-drop those connections between your controller and xib</li>
+</ul>
+</li>
+</ul>
+
+
+<h2><br></h2>
+
+<h2>UIViewController Initializer</h2>
+
+<ul>
+<li>Designated Initializer: <strong>initWithName:bundle:</strong></li>
+<li>Simply call <strong>alloc</strong> and <strong>init</strong></li>
+<li>Sending <strong>init</strong> to a view controller calls <strong>initWithName:bundle:</strong> and passes <em>nil</em> for both arguments</li>
+<li><strong>When a view controller is initialized with <em>nil</em> as its NIB name, it searches for a NIB file with the name of the class</strong></li>
+</ul>
+
+
+<h2><br></h2>
+
+<h2>UIViewController Lifecycle</h2>
+
+<p>See previous post for more details: <a href="http://pigfly.github.io/blog/2014/09/01/road-to-ios-0-dot-2/">View Controller Lifecycle</a></p>
+
+<h2><br></h2>
+
+<h3>Reference</h3>
+
+<ol>
+<li>Stanford iOS 7 development</li>
+<li><a href="https://developer.apple.com/library/mac/navigation/">Mac Developer Library</a></li>
+<li><a href="http://www.bignerdranch.com/">Big Nerd Ranch</a></li>
+</ol>
+
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    <hr>
+    
+    <div class="row-fluid">
+      
+      <div class="span6">
+        <p class="meta">
+        
+        
+
+
+
+  <a href="/blog/categories/ios/"><span class="badge">ios</span></a>
+
+
+
+
+        </p>
+      </div>
+      
+      <div class="span6 social-sharing">
+        <div class="sharing">
+  <div class="addthis_toolbox addthis_default_style ">
+  
+  
+  <a class="addthis_button_tweet"></a>
+  
+  
+  <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+
+      </div>
+      
+      
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span12">
+        <p class="meta">
+          
+            <a class="basic-alignment left" href="/blog/2014/10/road-to-ios-0-dot-6/" title="Previous Post: road to iOS 0.6">&laquo; road to iOS 0.6</a>
+          
+          
+            <a class="basic-alignment right" href="/blog/2014/10/road-to-ios-0-dot-6-dot-1/" title="Next Post: road to iOS 0.6.1">road to iOS 0.6.1 &raquo;</a>
+          
+        </p>
+      </div>
+    </div>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+
+
+        </div>
+      </div>
+      <div class="row-fluid">
+        <footer class="footer-page" role="contentinfo">
+          <p>
+  Copyright &copy; 2015 - <a href="http://pigfly.io">Alex</a> -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  - Under Creative Commons <a href="http://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>
+</p>
+
+
+        </footer>
+      </div>
+  </div>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'pigfly';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://pigfly.github.io/blog/2014/10/road-to-ios-0-dot-7/';
+        var disqus_url = 'http://pigfly.github.io/blog/2014/10/road-to-ios-0-dot-7/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

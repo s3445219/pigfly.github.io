@@ -1,0 +1,400 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>road to iOS 0 - Pigfly's learning notes</title>
+  <meta name="author" content="Alex">
+
+   
+  <meta name="description" content="Yet another static blog for writing down what I've learned...">
+  
+  <meta name="keywords" content="">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://pigfly.github.io/blog/2014/08/road-to-ios-0">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Pigfly's learning notes" type="application/atom+xml">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap-collapse.js"></script>
+  <script src="/js/modernizr-2.0.js"></script>
+  <script src="/js/octopress.js" type="text/javascript"></script>
+  <script src="/js/application.js"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <div class="navbar navbar-inverse navbar-static-top">
+  	<div class="navbar-inner">
+  	  <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="fui-menu-24"></span>
+        </a>
+  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
+  	      <ul class="nav">
+    
+        <li ><a href="/">Home</a></li>
+    
+        <li ><a href="/blog/archives">Archives</a></li>
+    
+        <li ><a href="/about.html">about</a></li>
+    
+</ul>
+
+<ul class="nav pull-right">
+    
+    <li><a href="http://github.com/pigfly" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+    
+    
+    
+    <li><a href="http://linkedin.com/in/notalexjiang" title="Linkedin Profile"><i class="icon-linkedin-sign social-navbar"></i></a></li>
+    
+    
+    
+    
+    
+
+    
+</ul>
+
+  	    </div>
+  	  </div>
+  	</div>
+  </div>
+  <div class="container" id="main">
+      <div class="row-fluid">
+        <div id="content">
+          <div>
+<article class="hentry" role="article">
+  
+
+  <header>
+  <div class="jumbotron">
+    Road to iOS 0
+	<h5><!-- https://github.com/imathis/octopress/commit/73e540409ceb8bc18048b6a96a4b815fc303ea28 -->
+
+
+
+
+
+<i class="icon-calendar"></i> <time class='entry-date' datetime='2014-08-30T18:31:18+10:00'><span class='date'>2014-08-30</span> <span class='time'>18:31</span></time></h5>
+  </div>
+</header>
+  <div class="row-fluid">
+    <div class="span12">
+      <h2>Dynamic Binding in Objective-C</h2>
+
+<h3>What is Dynamic Binding</h3>
+
+<p>Determining the methods of different kinds of objects to invoke at runtime rather than at compile-time.</p>
+
+<h3>Why we need Dynamic Binding</h3>
+
+<ol>
+<li>Since all objects live in the heap, there is no way for compiler to know which object will be created at compile time. In other words, memory for objects will be dynmaically allocated. So we need a mechanism to distinguish various objects and their associated properties, methods etc.</li>
+</ol>
+
+
+<!--more-->
+
+
+<ol>
+<li>Dynamic Binding enables polymorphsim. Different objects can have same interface, and by using the interface as a type, invoking methods in different objects. Here is a piece of code showing polymorphsim for objects in Objective-C.</li>
+</ol>
+
+
+<figure class='code'><figcaption><span>polymorphsim for objects</span><a href='http://pigfly.github.io/blog/2014/08/30/road-to-ios-0/'>link</a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="bp">NSArray</span> <span class="o">*</span><span class="n">ar</span> <span class="o">=</span> <span class="p">[</span><span class="bp">NSArray</span> <span class="nl">arrayWithObjects</span><span class="p">:</span><span class="n">car</span><span class="p">,</span> <span class="n">ship</span><span class="p">,</span> <span class="n">tiger</span><span class="p">,</span> <span class="nb">nil</span><span class="p">];</span>
+</span><span class='line'><span class="k">for</span> <span class="p">(</span><span class="kt">id</span> <span class="n">obj</span> <span class="k">in</span> <span class="n">ar</span><span class="p">)</span> <span class="p">{</span> <span class="p">[</span><span class="n">obj</span> <span class="n">run</span><span class="p">];}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>When do we need Dynamic Binding</h3>
+
+<ol>
+<li>mix objects of different classes in a collection (e.g. in an NSArray)</li>
+<li>support the “blind, structured” communication in MVC (i.e. delegation)</li>
+</ol>
+
+
+<h3>How Objective-C use dynamic binding for polymorphsim</h3>
+
+<p>The exact code executed, which is at runtime, is determined by:</p>
+
+<ol>
+<li>the unique method name(<strong>the selector</strong>)</li>
+<li>the object reference being invoked on(<strong>the reference</strong>)</li>
+</ol>
+
+
+<h2><br></h2>
+
+<h3>What is selector</h3>
+
+<p>A unique identifier for a method at runtime</p>
+
+<h3>Why we need selector</h3>
+
+<ol>
+<li>As mentioned earlier, the selector, and together with invoked object reference enable polymorphsim in objective-c. We can use selector for the above example, the selector could be used with an instance of each of the classes to invoke its run method—even though the implementation might be different for each.</li>
+</ol>
+
+
+<figure class='code'><figcaption><span>using selector in objective-c for different objects</span><a href='http://pigfly.github.io/blog/2014/08/30/road-to-ios-0/'>link</a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="kt">SEL</span> <span class="n">s</span> <span class="o">=</span> <span class="k">@selector</span><span class="p">(</span><span class="n">run</span><span class="p">);</span>
+</span><span class='line'><span class="p">[</span><span class="n">car</span> <span class="nl">performSelector</span><span class="p">:</span><span class="n">aSelector</span><span class="p">];</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ol>
+<li>When your View Controller have target-action pattern, usually we will use selector for invoking methods, rather than just sending message, for the communication from View to Controller is a blind structed way, there is no way for controller to figure out who is the sender until runtime.</li>
+</ol>
+
+
+<figure class='code'><figcaption><span>selector in target-action pattern for different objects</span><a href='http://pigfly.github.io/blog/2014/08/30/road-to-ios-0/'>link</a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">addTarget:</span><span class="p">(</span><span class="kt">id</span><span class="p">)</span><span class="nv">anObject</span> <span class="nf">action:</span><span class="p">(</span><span class="kt">SEL</span><span class="p">)</span><span class="nv">action</span> <span class="p">...;</span>
+</span><span class='line'><span class="p">[</span><span class="n">button</span> <span class="nl">addTarget</span><span class="p">:</span><span class="nb">self</span> <span class="nl">action</span><span class="p">:</span><span class="k">@selector</span><span class="p">(</span><span class="nl">digitPressed</span><span class="p">:)</span> <span class="p">...];</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>A cool selector usage</h3>
+
+<figure class='code'><figcaption><span>cool selector usages for different objects</span><a href='http://pigfly.github.io/blog/2014/08/30/road-to-ios-0/'>link</a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="c1">// let objects perform method in NSArray</span>
+</span><span class='line'><span class="p">[</span><span class="n">array</span> <span class="nl">makeObjectsPerformSelector</span><span class="p">:</span><span class="n">shootSelector</span><span class="p">];</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><br></p>
+
+<h2>Conclusion</h2>
+
+<p>The selector is usually used for performing polymorphsim behavior, it&rsquo;s part of dynamic binding mechanism in Objective-C.</p>
+
+<p><br></p>
+
+<h2>Protect ourselves from misusing dynamic binding</h2>
+
+<p><code>id</code> can facilitate polymorphsim, making codes more reusable. However, accidently invoking methods which don&rsquo;t exist in object can cause trouble. There are generally two ways to protect us by:</p>
+
+<ul>
+<li><strong>Introspection</strong>
+
+<ul>
+<li>Asking at runtime what class an object is or what messages can be sent to it</li>
+</ul>
+</li>
+<li><strong>Protocols</strong>
+
+<ul>
+<li>Does not specify the class of an object pointed to, but does specify what methods it implements.</li>
+<li>A syntax that is “in between” <code>id</code> and static typing</li>
+</ul>
+</li>
+</ul>
+
+
+<h3>Introspection</h3>
+
+<p>It&rsquo;s really about dependency checking&hellip;</p>
+
+<figure class='code'><figcaption><span>dependency checking</span><a href='http://pigfly.github.io/blog/2014/08/30/road-to-ios-0/'>link</a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="c1">// get class by sending class message to class</span>
+</span><span class='line'><span class="c1">// in this case, we send class message to NSString to check if obj inherents from NSString</span>
+</span><span class='line'><span class="k">if</span> <span class="p">([</span><span class="n">obj</span> <span class="nl">isKindOfClass</span><span class="p">:[</span><span class="bp">NSString</span> <span class="k">class</span><span class="p">]])</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">// if obj is subclass is NSString, we can safely cast</span>
+</span><span class='line'>    <span class="bp">NSString</span> <span class="o">*</span><span class="n">s</span> <span class="o">=</span> <span class="p">[(</span><span class="bp">NSString</span> <span class="o">*</span><span class="p">)</span><span class="n">obj</span> <span class="nl">stringByAppendingString</span><span class="p">:@</span><span class="err">”</span><span class="n">xyzzy</span><span class="err">”</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Sometimes, we also want to make sure some classes indeed hold methods we want to invoke&hellip;</p>
+
+<figure class='code'><figcaption><span>methods checking</span><a href='http://pigfly.github.io/blog/2014/08/30/road-to-ios-0/'>link</a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="c1">// respondsToSelector: returns whether an object responds to a given method</span>
+</span><span class='line'><span class="k">if</span> <span class="p">([</span><span class="n">obj</span> <span class="nl">respondsToSelector</span><span class="p">:</span><span class="k">@selector</span><span class="p">(</span><span class="n">shoot</span><span class="p">)])</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">[</span><span class="n">obj</span> <span class="n">shoot</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">([</span><span class="n">obj</span> <span class="nl">respondsToSelector</span><span class="p">:</span><span class="k">@selector</span><span class="p">(</span><span class="nl">shootAt</span><span class="p">:)])</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">[</span><span class="n">obj</span> <span class="nl">shootAt</span><span class="p">:</span><span class="n">target</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>A picture showing introspection life cycle</h4>
+
+<p><img src="/images/ios/introspection.png" title="introspection" ></p>
+
+<p><a href="https://developer.apple.com/library/mac/navigation/">image source</a></p>
+
+<p><br></p>
+
+<h2>Conclusion</h2>
+
+<p>Using polymorphsim with <code>id</code> greatly make codes more reusable, also, we can do dependency and method checking by using introspection.</p>
+
+<h2>Mindmap for dynamic binding</h2>
+
+<p><img src="/images/ios/dynamic-binding.png" title="Dynamic Binding Mindmap" ></p>
+
+<h2><br></h2>
+
+<h3>Reference</h3>
+
+<ol>
+<li>Stanford iOS 7 development</li>
+<li><a href="https://developer.apple.com/library/mac/navigation/">Mac Developer Library</a></li>
+<li><a href="http://www.apress.com/9781430260226">Beginning iOS 7 Development</a></li>
+</ol>
+
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    <hr>
+    
+    <div class="row-fluid">
+      
+      <div class="span6">
+        <p class="meta">
+        
+        
+
+
+
+  <a href="/blog/categories/ios/"><span class="badge">ios</span></a>
+
+
+
+
+        </p>
+      </div>
+      
+      <div class="span6 social-sharing">
+        <div class="sharing">
+  <div class="addthis_toolbox addthis_default_style ">
+  
+  
+  <a class="addthis_button_tweet"></a>
+  
+  
+  <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+
+      </div>
+      
+      
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span12">
+        <p class="meta">
+          
+            <a class="basic-alignment left" href="/blog/2014/08/perl-week2-cont/" title="Previous Post: perl week2 cont">&laquo; perl week2 cont</a>
+          
+          
+            <a class="basic-alignment right" href="/blog/2014/08/road-to-ios-0-dot-1/" title="Next Post: road to iOS 0.1">road to iOS 0.1 &raquo;</a>
+          
+        </p>
+      </div>
+    </div>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+
+
+        </div>
+      </div>
+      <div class="row-fluid">
+        <footer class="footer-page" role="contentinfo">
+          <p>
+  Copyright &copy; 2015 - <a href="http://pigfly.io">Alex</a> -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  - Under Creative Commons <a href="http://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>
+</p>
+
+
+        </footer>
+      </div>
+  </div>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'pigfly';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://pigfly.github.io/blog/2014/08/road-to-ios-0/';
+        var disqus_url = 'http://pigfly.github.io/blog/2014/08/road-to-ios-0/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

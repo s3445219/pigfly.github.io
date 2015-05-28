@@ -19,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://pigfly.github.io">
+  <link rel="canonical" href="http://pigfly.github.io/posts/3">
   <link href="/favicon.png" rel="icon">
   <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
   <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
@@ -108,7 +108,7 @@
 
 
 
-<i class="icon-calendar"></i> <time class='entry-date' datetime='2014-11-11T03:14:19+11:00'><span class='date'>2014-11-11</span> <span class='time'>03:14</span></time></h5>
+<i class="icon-calendar"></i> <time class='entry-date' datetime='2014-09-26T01:14:19+10:00'><span class='date'>2014-09-26</span> <span class='time'>01:14</span></time></h5>
           <div class="row-fluid">
           
           </div>
@@ -121,16 +121,30 @@
           
     </div>
     <div class="span10 post-container">
-      <h1 class="link"><a href="/blog/2014/11/road-to-ios-0-dot-x/">road to iOS 0.x</a></h1>
-      <h2>ImageIO - could not find ColorSync function [Solved]</h2>
+      <h1 class="link"><a href="/blog/2014/09/road-to-ios-0-dot-5/">road to iOS 0.5</a></h1>
+      <h2>Interface builder, Connections, Initializers</h2>
 
-<p>Recently I found an undocumented bug in iOS 8 when I tried to generate pdf under UIkit framework. The bug blocks me from generating pdf in a preferred way using UIPrint, so I had to use a more primitve method to generate the pdf in iOS8.</p>
+<h3>Interface builder</h3>
 
-<p>For better understanding this issue, first I will introduce ways of generating PDF in iOS, and why it may become a problem in iOS8 or above.</p>
+<ul>
+<li><strong>StoryBoard</strong>
+
+<ul>
+<li>easy way, less flexible, hard to do programmatically</li>
+</ul>
+</li>
+<li><strong>XIB</strong>
+
+<ul>
+<li>create a view only, easy to do programmatically</li>
+</ul>
+</li>
+</ul>
+
 
 
       
-       <a href="/blog/2014/11/road-to-ios-0-dot-x/">Read more &rarr;</a> 
+       <a href="/blog/2014/09/road-to-ios-0-dot-5/">Read more &rarr;</a> 
     </div>
   </div>
 
@@ -153,7 +167,7 @@
 
 
 
-<i class="icon-calendar"></i> <time class='entry-date' datetime='2014-10-14T10:14:19+11:00'><span class='date'>2014-10-14</span> <span class='time'>10:14</span></time></h5>
+<i class="icon-calendar"></i> <time class='entry-date' datetime='2014-09-06T12:14:19+10:00'><span class='date'>2014-09-06</span> <span class='time'>12:14</span></time></h5>
           <div class="row-fluid">
           
           </div>
@@ -166,24 +180,22 @@
           
     </div>
     <div class="span10 post-container">
-      <h1 class="link"><a href="/blog/2014/10/road-to-ios-0-dot-6-dot-1/">road to iOS 0.6.1</a></h1>
-      <h1>All about Nib file</h1>
+      <h1 class="link"><a href="/blog/2014/09/road-to-ios-0-dot-4/">road to iOS 0.4</a></h1>
+      <h2>Multiple MVCs</h2>
 
-<h2>Anatomy of Nib file</h2>
-
-<ul>
-<li><strong>User interface</strong> objects(Visual elements)</li>
-<li><strong>File Owner</strong>, placeholder, a <strong>controller</strong> object that is responsible for contents of nib file.
+<h3>Two multiple MVC controllers</h3>
 
 <ul>
-<li>Usually you will want to connect a controller to the nib file, so that controller&rsquo;s <strong>view</strong> can be connected with nib&rsquo;s top-level object</li>
-<li>However, if you want to break a view into different nib components,  then assemble them together in one controller, you can leave this <strong>File Owner</strong> blank, and load all nibs in your controller.</li>
+<li><strong>UINavigationController</strong>
+
+<ul>
+<li>often used for a more detailed view (e.g. calendar in iOS)</li>
 </ul>
 </li>
-<li><strong>First Responder</strong>, placeholder, the first object in your app&rsquo;s responder chain.
+<li><strong>UITabBarController</strong>
 
 <ul>
-<li>The UIKit framework automatically set first responder for you</li>
+<li>often used for views have no logical connections (e.g. timer in iOS)</li>
 </ul>
 </li>
 </ul>
@@ -191,7 +203,7 @@
 
 
       
-       <a href="/blog/2014/10/road-to-ios-0-dot-6-dot-1/">Read more &rarr;</a> 
+       <a href="/blog/2014/09/road-to-ios-0-dot-4/">Read more &rarr;</a> 
     </div>
   </div>
 
@@ -202,9 +214,11 @@
   
   <div class="pagination">
     
-    <a class="prev" href="/posts/2">&larr; Older Posts</a>
+    <a class="prev" href="/posts/4">&larr; Older Posts</a>
     
     |
+    
+    <a class="next" href="/posts/2">Newer Posts &rarr;</a>
     
   </div>
 </div>

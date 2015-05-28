@@ -19,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://pigfly.github.io">
+  <link rel="canonical" href="http://pigfly.github.io/posts/5">
   <link href="/favicon.png" rel="icon">
   <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
   <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
@@ -108,7 +108,7 @@
 
 
 
-<i class="icon-calendar"></i> <time class='entry-date' datetime='2014-11-11T03:14:19+11:00'><span class='date'>2014-11-11</span> <span class='time'>03:14</span></time></h5>
+<i class="icon-calendar"></i> <time class='entry-date' datetime='2014-08-31T09:16:07+10:00'><span class='date'>2014-08-31</span> <span class='time'>09:16</span></time></h5>
           <div class="row-fluid">
           
           </div>
@@ -121,16 +121,47 @@
           
     </div>
     <div class="span10 post-container">
-      <h1 class="link"><a href="/blog/2014/11/road-to-ios-0-dot-x/">road to iOS 0.x</a></h1>
-      <h2>ImageIO - could not find ColorSync function [Solved]</h2>
+      <h1 class="link"><a href="/blog/2014/08/road-to-ios-0-dot-1/">road to iOS 0.1</a></h1>
+      <h2>Attributed String &amp; UITextView in Objective-C</h2>
 
-<p>Recently I found an undocumented bug in iOS 8 when I tried to generate pdf under UIkit framework. The bug blocks me from generating pdf in a preferred way using UIPrint, so I had to use a more primitve method to generate the pdf in iOS8.</p>
+<h3>What is Attributed String</h3>
 
-<p>For better understanding this issue, first I will introduce ways of generating PDF in iOS, and why it may become a problem in iOS8 or above.</p>
+<p>Determine how text will render on the screen. You can think of <code>NSAttributedString</code> as an NSString where each character has an NSDictionary of &ldquo;attributes&rdquo;.</p>
+
+<figure class='code'><figcaption><span>example of creating attributed strings</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="c1">// this will create a dictionary for holding diifferent standard attributes</span>
+</span><span class='line'><span class="c1">// the name of attributes are global NSString constants</span>
+</span><span class='line'><span class="bp">NSDictionary</span> <span class="o">*</span><span class="n">attrsDictionary</span> <span class="o">=</span>
+</span><span class='line'>  <span class="c1">// specify font attributes</span>
+</span><span class='line'>  <span class="l">@{</span> <span class="nl">NSFontAttributeName</span> <span class="p">:</span>
+</span><span class='line'>       <span class="p">[</span><span class="bp">UIFont</span> <span class="nl">preferredFontWithTextStyle</span><span class="p">:</span><span class="n">UIFontTextStyleHeadline</span><span class="p">],</span>
+</span><span class='line'>  <span class="c1">// specify foreground attribute</span>
+</span><span class='line'>    <span class="nl">NSForegroundColorAttributeName</span> <span class="p">:</span> <span class="p">[</span><span class="bp">UIColor</span> <span class="n">greenColor</span><span class="p">],</span>
+</span><span class='line'>    <span class="nl">NSStrokeWidthAttributeName</span> <span class="p">:</span> <span class="p">@</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span>
+</span><span class='line'>    <span class="nl">NSStrokeColorAttributeName</span> <span class="p">:</span> <span class="p">[</span><span class="bp">UIColor</span> <span class="n">redColor</span><span class="p">]</span> <span class="l">}</span>
+</span><span class='line'><span class="c1">// creating attributed string using attribute dictionary</span>
+</span><span class='line'><span class="bp">NSAttributedString</span> <span class="o">*</span><span class="n">attrString</span> <span class="o">=</span>
+</span><span class='line'>  <span class="p">[[</span><span class="bp">NSAttributedString</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithString</span><span class="p">:</span><span class="s">@&quot;string&quot;</span> <span class="nl">attributes</span><span class="p">:</span><span class="n">attrsDictionary</span><span class="p">];</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
 
 
       
-       <a href="/blog/2014/11/road-to-ios-0-dot-x/">Read more &rarr;</a> 
+       <a href="/blog/2014/08/road-to-ios-0-dot-1/">Read more &rarr;</a> 
     </div>
   </div>
 
@@ -153,7 +184,7 @@
 
 
 
-<i class="icon-calendar"></i> <time class='entry-date' datetime='2014-10-14T10:14:19+11:00'><span class='date'>2014-10-14</span> <span class='time'>10:14</span></time></h5>
+<i class="icon-calendar"></i> <time class='entry-date' datetime='2014-08-30T18:31:18+10:00'><span class='date'>2014-08-30</span> <span class='time'>18:31</span></time></h5>
           <div class="row-fluid">
           
           </div>
@@ -166,32 +197,23 @@
           
     </div>
     <div class="span10 post-container">
-      <h1 class="link"><a href="/blog/2014/10/road-to-ios-0-dot-6-dot-1/">road to iOS 0.6.1</a></h1>
-      <h1>All about Nib file</h1>
+      <h1 class="link"><a href="/blog/2014/08/road-to-ios-0/">road to iOS 0</a></h1>
+      <h2>Dynamic Binding in Objective-C</h2>
 
-<h2>Anatomy of Nib file</h2>
+<h3>What is Dynamic Binding</h3>
 
-<ul>
-<li><strong>User interface</strong> objects(Visual elements)</li>
-<li><strong>File Owner</strong>, placeholder, a <strong>controller</strong> object that is responsible for contents of nib file.
+<p>Determining the methods of different kinds of objects to invoke at runtime rather than at compile-time.</p>
 
-<ul>
-<li>Usually you will want to connect a controller to the nib file, so that controller&rsquo;s <strong>view</strong> can be connected with nib&rsquo;s top-level object</li>
-<li>However, if you want to break a view into different nib components,  then assemble them together in one controller, you can leave this <strong>File Owner</strong> blank, and load all nibs in your controller.</li>
-</ul>
-</li>
-<li><strong>First Responder</strong>, placeholder, the first object in your app&rsquo;s responder chain.
+<h3>Why we need Dynamic Binding</h3>
 
-<ul>
-<li>The UIKit framework automatically set first responder for you</li>
-</ul>
-</li>
-</ul>
+<ol>
+<li>Since all objects live in the heap, there is no way for compiler to know which object will be created at compile time. In other words, memory for objects will be dynmaically allocated. So we need a mechanism to distinguish various objects and their associated properties, methods etc.</li>
+</ol>
 
 
 
       
-       <a href="/blog/2014/10/road-to-ios-0-dot-6-dot-1/">Read more &rarr;</a> 
+       <a href="/blog/2014/08/road-to-ios-0/">Read more &rarr;</a> 
     </div>
   </div>
 
@@ -202,9 +224,11 @@
   
   <div class="pagination">
     
-    <a class="prev" href="/posts/2">&larr; Older Posts</a>
+    <a class="prev" href="/posts/6">&larr; Older Posts</a>
     
     |
+    
+    <a class="next" href="/posts/4">Newer Posts &rarr;</a>
     
   </div>
 </div>

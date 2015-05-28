@@ -1,0 +1,2489 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Pigfly's learning notes]]></title>
+  <link href="http://pigfly.github.io/atom.xml" rel="self"/>
+  <link href="http://pigfly.github.io/"/>
+  <updated>2015-05-29T00:43:13+10:00</updated>
+  <id>http://pigfly.github.io/</id>
+  <author>
+    <name><![CDATA[Alex]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[road to iOS 0.x]]></title>
+    <link href="http://pigfly.github.io/blog/2014/11/road-to-ios-0-dot-x/"/>
+    <updated>2014-11-11T03:14:19+11:00</updated>
+    <id>http://pigfly.github.io/blog/2014/11/road-to-ios-0-dot-x</id>
+    <content type="html"><![CDATA[<h2>ImageIO - could not find ColorSync function [Solved]</h2>
+
+<p>Recently I found an undocumented bug in iOS 8 when I tried to generate pdf under UIkit framework. The bug blocks me from generating pdf in a preferred way using UIPrint, so I had to use a more primitve method to generate the pdf in iOS8.</p>
+
+<p>For better understanding this issue, first I will introduce ways of generating PDF in iOS, and why it may become a problem in iOS8 or above.</p>
+
+<!--more-->
+
+
+<h2>Low level way</h2>
+
+<ul>
+<li>The first way of generating PDF is using UiKit and core graphics. It provides a set of functions for generating PDF content using native drawing code. However, there are some classes like <em>UIBezierPath</em> provide more high level API for drawing. Truth is, those drawing classes wrap Core Graphics code into their methods to ease drawing for the programmer.</li>
+<li>Notice, the core graphics is a 2D drawing C API, it deals with lower level of drawing compared to the latter one. And you need to provide frame,  margins, translate matrix parameters,  number of pages etc in order to generate a user-friendly pdf.</li>
+<li>For a more detailed examples of generating PDF, visit apple doc at <a href="https://developer.apple.com/library/ios/documentation/2DDrawing/Conceptual/DrawingPrintingiOS/GeneratingPDF/GeneratingPDF.html">generating PDF content</a></li>
+</ul>
+
+
+<h2>High level way</h2>
+
+<ul>
+<li>The task I involved is to generate PDF from html string. So I decide to use <em>UIWebView</em>&rsquo;s viewPrintFormatter and other UIPrint* classes to achieve the goal.</li>
+<li>However, there is a key method in the UIPrintPageRenderer class causes drawing thread hang up, and never gets returned, here is the code and error message:</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>drawPageAtIndex</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="c1">// the sixth line causes the problem</span>
+</span><span class='line'><span class="k">for</span> <span class="p">(</span> <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">self</span><span class="p">.</span><span class="n">numberOfPages</span> <span class="p">;</span> <span class="n">i</span><span class="o">++</span> <span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">UIGraphicsBeginPDFPage</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="p">[</span><span class="nb">self</span> <span class="nl">drawPageAtIndex</span><span class="p">:</span> <span class="n">i</span> <span class="nl">inRect</span><span class="p">:</span> <span class="n">bounds</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// the console output</span>
+</span><span class='line'><span class="c1">// *** ImageIO - could not find ColorSync function &#39;ColorSyncProfileCreateSanitizedCopy&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>When you start to trace the source of the method call, you will find it&rsquo;s something worked behind the scence, you can&rsquo;t even see the source code. So what I end up with doing is using a core graphics approach, avoiding using <em>drawPageAtIndex:</em> call, and figure out a way how to draw multiple pdf pages in pdf.</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>drawPageAtIndex</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">pages</span> <span class="p">;</span><span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">maxHeight</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">height</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="c1">// Check to see if page draws more than the height of the UIWebView</span>
+</span><span class='line'>            <span class="bp">CGRect</span> <span class="n">scrollViewFrame</span> <span class="o">=</span> <span class="p">[</span><span class="n">scrollView</span> <span class="n">frame</span><span class="p">];</span>
+</span><span class='line'>            <span class="n">scrollViewFrame</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">height</span> <span class="o">-=</span> <span class="p">(((</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">maxHeight</span><span class="p">)</span> <span class="o">-</span> <span class="n">height</span><span class="p">);</span>
+</span><span class='line'>            <span class="p">[</span><span class="n">scrollView</span> <span class="nl">setFrame</span><span class="p">:</span><span class="n">scrollViewFrame</span><span class="p">];</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>        <span class="c1">// Specify the size of the pdf page</span>
+</span><span class='line'>        <span class="n">UIGraphicsBeginPDFPageWithInfo</span><span class="p">(</span><span class="n">CGRectMake</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">kPaperWidthA4</span><span class="p">,</span> <span class="n">kPaperHeightA4</span><span class="p">),</span> <span class="nb">nil</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">CGContextRef</span> <span class="n">currentContext</span> <span class="o">=</span> <span class="n">UIGraphicsGetCurrentContext</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">CGContextTranslateCTM</span><span class="p">(</span><span class="n">currentContext</span><span class="p">,</span> <span class="n">kMargin</span><span class="p">,</span> <span class="o">-</span><span class="p">(</span><span class="n">maxHeight</span> <span class="o">*</span> <span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="n">kMargin</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="p">[</span><span class="n">scrollView</span> <span class="nl">setContentOffset</span><span class="p">:</span><span class="n">CGPointMake</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxHeight</span> <span class="o">*</span> <span class="n">i</span><span class="p">)</span> <span class="nl">animated</span><span class="p">:</span><span class="nb">NO</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="p">[</span><span class="n">scrollView</span><span class="p">.</span><span class="n">layer</span> <span class="nl">renderInContext</span><span class="p">:</span><span class="n">currentContext</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2><br></h2>
+
+<h3>Reference</h3>
+
+<ol>
+<li>Stanford iOS 7 development</li>
+<li><a href="https://developer.apple.com/library/mac/navigation/">Mac Developer Library</a></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[road to iOS 0.6.1]]></title>
+    <link href="http://pigfly.github.io/blog/2014/10/road-to-ios-0-dot-6-dot-1/"/>
+    <updated>2014-10-14T10:14:19+11:00</updated>
+    <id>http://pigfly.github.io/blog/2014/10/road-to-ios-0-dot-6-dot-1</id>
+    <content type="html"><![CDATA[<h1>All about Nib file</h1>
+
+<h2>Anatomy of Nib file</h2>
+
+<ul>
+<li><strong>User interface</strong> objects(Visual elements)</li>
+<li><strong>File Owner</strong>, placeholder, a <strong>controller</strong> object that is responsible for contents of nib file.
+
+<ul>
+<li>Usually you will want to connect a controller to the nib file, so that controller&rsquo;s <strong>view</strong> can be connected with nib&rsquo;s top-level object</li>
+<li>However, if you want to break a view into different nib components,  then assemble them together in one controller, you can leave this <strong>File Owner</strong> blank, and load all nibs in your controller.</li>
+</ul>
+</li>
+<li><strong>First Responder</strong>, placeholder, the first object in your app&rsquo;s responder chain.
+
+<ul>
+<li>The UIKit framework automatically set first responder for you</li>
+</ul>
+</li>
+</ul>
+
+
+<!--more-->
+
+
+<h2>Nib Object Life Cycle</h2>
+
+<p>The nib-loading code instantiates the objects, configures them, and reestablishes any inter-object connections that you created in your nib file.
+When you use methods of <strong>NSBundle</strong> to load and instantiate the objects in nib file, the nib-loading code does following:</p>
+
+<ol>
+<li><p>Load the archived nib file into memory</p></li>
+<li><p>Unarchive the nib file, instantiates the objects</p>
+
+<ul>
+<li>In iOS, any object that conforms to the NSCoding protocol is initialized using the <strong>initWithCoder:</strong>. This includes all subclasses of UIView and UIViewController whether they are part of the default Xcode library or custom classes you define.</li>
+<li>The reason using <strong>initWithCoder</strong> is that they are available in Xcode library (System knows how to instantiate)</li>
+<li>Custom objects other than those described in the preceding steps receive an <strong>init</strong> message. (Which may lead to init chain)</li>
+</ul>
+</li>
+<li><p>It <strong>reestablishes all connections</strong> (actions, outlets, and bindings) between objects in the nib file.</p>
+
+<ul>
+<li><strong>Outlet connections</strong>
+
+<ul>
+<li>The nib-loading code uses the <strong>setValue:forKey:</strong> to reconnect each outlet</li>
+<li>Setting an outlet also generates a <strong>key-value observing (KVO)</strong> notification for any registered observers.
+
+<ul>
+<li>That&rsquo;s why if sometimes you forget to connect oulet in your code to nib file, it will prompt key-value pair not matched !</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Action connections</strong>
+
+<ul>
+<li>In iOS, the nib-loading code uses the <strong>addTarget:action:forControlEvents:</strong> method of the UIControl object to configure the action. If the target is nil, the action is handled by the responder chain.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>It sends an <strong>awakeFromNib</strong> message to the appropriate objects in the nib file</p>
+
+<ul>
+<li>In iOS, this message is sent only to the interface objects that were instantiated by the nib-loading code. It is not sent to File’s Owner, First Responder, or any other placeholder objects.</li>
+<li>That means, you can also put view init code in <strong>awakeFromNib</strong> in your custom view, since interface objects are already instantiated.</li>
+</ul>
+</li>
+</ol>
+
+
+<figure class='code'><figcaption><span>configure view in awakeFromNib in YourView.m</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">awakeFromNib</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nb">self</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="c1">// do view init</span>
+</span><span class='line'>      <span class="nb">self</span><span class="p">.</span><span class="n">button</span><span class="p">.</span><span class="n">layer</span> <span class="nl">setBorderWidth</span><span class="p">:</span><span class="mf">2.0f</span><span class="p">];</span>
+</span><span class='line'>      <span class="p">...</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><br></p>
+
+<p>Be mindful that if you need to configure the objects in your nib file further at load time, the most appropriate time to do so is <strong>after your nib-loading call returns</strong>. At that point, all of the objects are created, initialized, and ready for use.</p>
+
+<figure class='code'><figcaption><span>configure objects in nib files after nib is loaded in controller</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">loadView</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="c1">// load nib file</span>
+</span><span class='line'>  <span class="bp">NSArray</span> <span class="o">*</span><span class="n">nibs</span> <span class="o">=</span> <span class="p">[[</span><span class="bp">NSBundle</span> <span class="n">mainBundle</span><span class="p">]</span> <span class="nl">loadNibNamed</span><span class="p">:</span><span class="s">@&quot;yourNib&quot;</span>
+</span><span class='line'>                                 <span class="nl">owner</span><span class="p">:</span><span class="nb">self</span>
+</span><span class='line'>                               <span class="nl">options</span><span class="p">:</span><span class="nb">nil</span><span class="p">];</span>
+</span><span class='line'>  <span class="n">YourOwnView</span> <span class="o">*</span><span class="n">first</span> <span class="o">=</span> <span class="p">[</span><span class="n">nibs</span> <span class="n">firstObject</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// configure the view</span>
+</span><span class='line'>  <span class="p">...</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nb">self</span><span class="p">.</span><span class="n">view</span> <span class="o">=</span> <span class="n">first</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>  
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2><br></h2>
+
+<h3>Load custom view (nib file + UIView file)</h3>
+
+<ul>
+<li>Steps for loading custom view
+
+<ul>
+<li>create a view using interface builder(i.e. create xib file)</li>
+<li>create your view controller for this xib (if don&rsquo;t leave File Owner empty)</li>
+<li>create subclass of <strong>UIView</strong>, e.g. YourOwnView</li>
+<li><strong>change the custom class view attribute for xib to YourOwnView</strong></li>
+<li>implement <strong>awakeFromNib</strong> to custom initialise your elements in nib</li>
+<li><strong>call loadNibNamed: at appropriate time in your controller to let nib-loading cycle go through</strong></li>
+</ul>
+</li>
+</ul>
+
+
+<p>A common mistake is to call <strong>initWithFrame</strong> in controller, which only affects those view created pure programmatically. It has nothing to do with Your nib file. You need to call <strong>loadNibNamed</strong> in controller at least once to give your nib file a chance to finish nib-loading life cycle !</p>
+
+<h2>Nib Anatomy Mindnode</h2>
+
+<p><img src="http://pigfly.github.io/images/ios/nib_anatomy.png" width="805" height="585" title="Nib Anatomy" ></p>
+
+<h2><br></h2>
+
+<h3>Reference</h3>
+
+<ol>
+<li>Stanford iOS 7 development</li>
+<li><a href="https://developer.apple.com/library/mac/navigation/">Mac Developer Library</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/cocoa/conceptual/loadingresources/cocoanibs/cocoanibs.html">Manage Resources in OSX</a></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[road to iOS 0.7]]></title>
+    <link href="http://pigfly.github.io/blog/2014/10/road-to-ios-0-dot-7/"/>
+    <updated>2014-10-12T13:14:19+11:00</updated>
+    <id>http://pigfly.github.io/blog/2014/10/road-to-ios-0-dot-7</id>
+    <content type="html"><![CDATA[<h1>View Controllers</h1>
+
+<h2>View Controller Essentials</h2>
+
+<ul>
+<li>An instance of a subclass of <strong>UIViewController</strong></li>
+<li>It manages a <strong>view hierarchy</strong></li>
+<li>It&rsquo;s responsible for creating view objects, handling events</li>
+</ul>
+
+
+<!--more-->
+
+
+<h2>View in View Controller</h2>
+
+<ul>
+<li>An important property <strong>view</strong></li>
+<li>It&rsquo;s the <strong>root</strong> of view controller&rsquo;s view hierarchy</li>
+<li>Two ways of creating its view hierarchy :
+
+<ul>
+<li>Programmatically, override the <strong>UIViewController</strong> method <strong>loadView</strong></li>
+<li>Interface Builder, loading a NIB file</li>
+</ul>
+</li>
+</ul>
+
+
+<h3>Create view programmatically</h3>
+
+<p>In your own view controller class(which can be created by inheriting <strong>UIViewController</strong>), override the <strong>loadview</strong>:</p>
+
+<figure class='code'><figcaption><span>create view in view controller's loadView method </span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">loadView</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="c1">// 1. specify the view&#39;s frame</span>
+</span><span class='line'>  <span class="c1">// could use other Rect like full screen</span>
+</span><span class='line'>  <span class="c1">// [UIScreen mainScreen].bounds</span>
+</span><span class='line'>  <span class="bp">CGRect</span> <span class="n">firstFrame</span> <span class="o">=</span> <span class="n">CGRectMake</span><span class="p">(</span><span class="mi">160</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">105</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// 2. init an instance of view</span>
+</span><span class='line'>  <span class="n">YourOwnView</span> <span class="o">*</span><span class="n">firstView</span> <span class="o">=</span> <span class="p">[[</span><span class="n">YourOwnView</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithFrame</span><span class="p">:</span><span class="n">firstFrame</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// 3. configure the  view</span>
+</span><span class='line'>  <span class="n">firstView</span><span class="p">.</span><span class="n">backgroundColor</span> <span class="o">=</span> <span class="p">[</span><span class="bp">UIColor</span> <span class="n">greenColor</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// 4. set the view in view controller to this view</span>
+</span><span class='line'>  <span class="c1">// sometimes you use addSubView if you have multiple views</span>
+</span><span class='line'>  <span class="c1">// e.g. [firstView addSubview: secondView];</span>
+</span><span class='line'>  <span class="nb">self</span><span class="p">.</span><span class="n">view</span> <span class="o">=</span> <span class="n">firstView</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>However, the code above is for creating view hierarchy in view controller only,
+it has nothing to do with the actual view appeared on the screen. To connect a
+view in view controller with screen, you need to use <strong>UIwindow</strong>&rsquo;s <strong>setRootViewController</strong>.</p>
+
+<figure class='code'><figcaption><span>set root view controller in appDelegate.m </span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">BOOL</span><span class="p">)</span><span class="nf">application:</span><span class="p">(</span><span class="bp">UIApplication</span> <span class="o">*</span><span class="p">)</span><span class="nv">application</span> <span class="nf">didFinishLaunchingWithOptions:</span><span class="p">(</span><span class="bp">NSDictionary</span> <span class="o">*</span><span class="p">)</span><span class="nv">launchOptions</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nb">self</span><span class="p">.</span><span class="n">window</span> <span class="o">=</span> <span class="p">[[</span><span class="bp">UIWindow</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithFrame</span><span class="p">:[[</span><span class="bp">UIScreen</span> <span class="n">mainScreen</span><span class="p">]</span> <span class="n">bounds</span><span class="p">]];</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// init your view controller</span>
+</span><span class='line'>  <span class="n">YourOwnViewController</span> <span class="o">*</span><span class="n">vc</span> <span class="o">=</span> <span class="p">[</span><span class="n">YourOwnViewController</span> <span class="n">alloc</span><span class="p">]</span> <span class="n">init</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// set the window&#39;s root controller</span>
+</span><span class='line'>  <span class="nb">self</span><span class="p">.</span><span class="n">window</span><span class="p">.</span><span class="n">rootViewController</span> <span class="o">=</span> <span class="n">vc</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nb">self</span><span class="p">.</span><span class="n">window</span><span class="p">.</span><span class="n">backgroundColor</span> <span class="o">=</span> <span class="p">[</span><span class="bp">UIColor</span> <span class="n">whiteColor</span><span class="p">];</span>
+</span><span class='line'>  <span class="p">[</span><span class="nb">self</span><span class="p">.</span><span class="n">window</span> <span class="n">makeKeyAndVisible</span><span class="p">];</span>
+</span><span class='line'>  <span class="k">return</span> <span class="nb">YES</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Create view use XIB</h3>
+
+<ul>
+<li>Steps for creating view for view controller using XIB:
+
+<ul>
+<li>create a view using interface builder(i.e. create xib file)</li>
+<li>create your view controller for this xib</li>
+<li><strong>make sure your xib&rsquo;s name is named the same as your view controller</strong> (xcode uses this to automatically load nib file i.e. init the view)</li>
+<li><strong>connect</strong> your controller to your xib(e.g. File&rsquo;s owner, IBOutlet, IBAction)</li>
+</ul>
+</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>create view controller according to your xib file </span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="k">@interface</span> <span class="nc">YourOwnViewController</span> <span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// IBOutlet is typedef as void, it&#39;s only for xcode to identify the specific element in xib</span>
+</span><span class='line'><span class="c1">// Pay attention to the weak decorator, follow parent-child rule</span>
+</span><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="k">nonatomic</span><span class="p">,</span> <span class="k">weak</span><span class="p">)</span> <span class="kt">IBOutlet</span> <span class="bp">UIDatePicker</span> <span class="o">*</span><span class="n">datePicker</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">@end</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// IBAction is typedef as void, it&#39;s only for xcode to identify the specific action in xib</span>
+</span><span class='line'><span class="o">-</span> <span class="p">(</span><span class="kt">IBAction</span><span class="p">)</span><span class="nl">addReminder</span><span class="p">:(</span><span class="kt">id</span><span class="p">)</span><span class="n">sender</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="bp">NSDate</span> <span class="o">*</span><span class="n">date</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="n">datePicker</span><span class="p">.</span><span class="n">date</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">NSLog</span><span class="p">(</span><span class="s">@&quot;Setting a reminder for %@&quot;</span><span class="p">,</span> <span class="n">date</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>After you get your xib and view controller done, you may now <strong>connect these two together</strong>.</p>
+
+<ul>
+<li>Connect to File&rsquo;s Owner in xib
+
+<ul>
+<li>use identity inspector to change the view controller class to your own class</li>
+</ul>
+</li>
+<li>Connect outlet and actions
+
+<ul>
+<li>right click on File&rsquo;s Owner, drag-and-drop those connections between your controller and xib</li>
+</ul>
+</li>
+</ul>
+
+
+<h2><br></h2>
+
+<h2>UIViewController Initializer</h2>
+
+<ul>
+<li>Designated Initializer: <strong>initWithName:bundle:</strong></li>
+<li>Simply call <strong>alloc</strong> and <strong>init</strong></li>
+<li>Sending <strong>init</strong> to a view controller calls <strong>initWithName:bundle:</strong> and passes <em>nil</em> for both arguments</li>
+<li><strong>When a view controller is initialized with <em>nil</em> as its NIB name, it searches for a NIB file with the name of the class</strong></li>
+</ul>
+
+
+<h2><br></h2>
+
+<h2>UIViewController Lifecycle</h2>
+
+<p>See previous post for more details: <a href="http://pigfly.github.io/blog/2014/09/01/road-to-ios-0-dot-2/">View Controller Lifecycle</a></p>
+
+<h2><br></h2>
+
+<h3>Reference</h3>
+
+<ol>
+<li>Stanford iOS 7 development</li>
+<li><a href="https://developer.apple.com/library/mac/navigation/">Mac Developer Library</a></li>
+<li><a href="http://www.bignerdranch.com/">Big Nerd Ranch</a></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[road to iOS 0.6]]></title>
+    <link href="http://pigfly.github.io/blog/2014/10/road-to-ios-0-dot-6/"/>
+    <updated>2014-10-07T05:14:19+11:00</updated>
+    <id>http://pigfly.github.io/blog/2014/10/road-to-ios-0-dot-6</id>
+    <content type="html"><![CDATA[<h1>Views</h1>
+
+<h2>View Essentials</h2>
+
+<ul>
+<li>View is an instance of <strong>UIView</strong> or one of its subclass (e.g. UIScrollView UILabel&hellip;)</li>
+<li>View knows how to <strong>draw</strong> itself (e.g. drawInRect)</li>
+<li>View handles <strong>events</strong> (e.g. touches, value changes)</li>
+<li>View exists within a <strong>hierarchy</strong> of views. (root view is app&rsquo;s window)</li>
+</ul>
+
+
+<!--more-->
+
+
+<h2>View Hierarchy</h2>
+
+<ul>
+<li>Each view in the hierarchy, renders itself to its <em>layer</em>, an instance of <strong>CALayer</strong></li>
+<li>The layers of all the views are composited together to form a complete view</li>
+<li>When you add a view as subview of another view, the <strong>superview</strong> and <strong>subviews</strong>  properties are automatically established</li>
+<li>Classes like <strong>UIButton</strong>, <strong>UILabel</strong> already know how to draw themselves to their layers</li>
+</ul>
+
+
+<p><img src="http://pigfly.github.io/images/ios/view_hierarchy_2.png" width="267" height="380" title="view hierarchy diagram" ></p>
+
+<p><a href="http://photosynthesiis.github.io/blog/2014/03/09/ios-4/">image source</a></p>
+
+<h2><br></h2>
+
+<h2>What a View Class looks like</h2>
+
+<ul>
+<li>You create your own view class inherent from <strong>UIView</strong></li>
+<li><strong>initWithFrame:</strong> is designated initializer</li>
+<li><strong>drawRect:</strong> is for custom drawing</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>what a view class looks like </span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="c1">// designated initializer</span>
+</span><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">id</span><span class="p">)</span><span class="nf">initWithFrame:</span><span class="p">(</span><span class="bp">CGRect</span><span class="p">)</span><span class="nv">frame</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="nb">self</span> <span class="o">=</span> <span class="p">[</span><span class="nb">super</span> <span class="nl">initWithFrame</span><span class="p">:</span><span class="n">frame</span><span class="p">];</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="nb">self</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="c1">// do init setup for your view</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nb">self</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Only override drawRect: if you perform custom drawing.</span>
+</span><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">drawRect:</span><span class="p">(</span><span class="bp">CGRect</span><span class="p">)</span><span class="nv">rect</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="p">...</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Create a View</h2>
+
+<ul>
+<li>To create a view, you need to get its <strong>frame</strong></li>
+<li>A <strong>frame</strong> specifies the view&rsquo;s size and its position relative to its superview, and it&rsquo;s always in a <strong>rectangle</strong> model.</li>
+<li>Steps for creating a view :
+
+<ul>
+<li>Specify the view&rsquo;s frame</li>
+<li>Init an instance of view</li>
+<li>configure the view instance</li>
+<li>add view instance as subview</li>
+</ul>
+</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>create view in view controller's loadView method </span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">loadView</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="c1">// 1. specify the view&#39;s frame</span>
+</span><span class='line'>  <span class="c1">// could use other Rect like full screen</span>
+</span><span class='line'>  <span class="c1">// [UIScreen mainScreen].bounds</span>
+</span><span class='line'>  <span class="bp">CGRect</span> <span class="n">firstFrame</span> <span class="o">=</span> <span class="n">CGRectMake</span><span class="p">(</span><span class="mi">160</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">105</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// 2. init an instance of view</span>
+</span><span class='line'>  <span class="n">YourOwnView</span> <span class="o">*</span><span class="n">firstView</span> <span class="o">=</span> <span class="p">[[</span><span class="n">YourOwnView</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithFrame</span><span class="p">:</span><span class="n">firstFrame</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// 3. configure the  view</span>
+</span><span class='line'>  <span class="n">firstView</span><span class="p">.</span><span class="n">backgroundColor</span> <span class="o">=</span> <span class="p">[</span><span class="bp">UIColor</span> <span class="n">greenColor</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// 4. set the view in view controller to this view</span>
+</span><span class='line'>  <span class="c1">// sometimes you use addSubView if you have multiple views</span>
+</span><span class='line'>  <span class="c1">// e.g. [firstView addSubview: secondView];</span>
+</span><span class='line'>  <span class="nb">self</span><span class="p">.</span><span class="n">view</span> <span class="o">=</span> <span class="n">firstView</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2><br></h2>
+
+<h2>Custom Drawing in drawRect:</h2>
+
+<ul>
+<li><strong>UIView</strong> subclasses override <strong>drawRect:</strong> to perform custom drawing. e.g. the <strong>drawRect:</strong> for <strong>UILabel</strong> draw text on screen</li>
+<li>To override <strong>drawRect</strong>, you need to get the <strong>bounds</strong>
+
+<ul>
+<li><strong>bounds</strong> is a view&rsquo;s rectangle in its <strong>own</strong> coordinate system</li>
+<li><strong>frame</strong> is the same rectangle in its <strong>superview&rsquo;s</strong> coordinate system</li>
+</ul>
+</li>
+<li>Steps for creating a custom view in drawRect:
+
+<ul>
+<li>Specify the bounds of view</li>
+<li>Specify necessary geometry variables for building <strong>UIBezierPath</strong></li>
+<li>Init an instace of <strong>UIBezierPath</strong></li>
+<li>Call appropriate drawing API in <strong>UIBezierPath</strong></li>
+<li>Draw the line</li>
+</ul>
+</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>create custom drawing in drawRect: </span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">loadView</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="c1">// 1. Specify the bounds of view</span>
+</span><span class='line'>  <span class="bp">CGRect</span> <span class="n">bounds</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="n">bounds</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// 2. Specify necessary geometry variables for building UIBezierPath</span>
+</span><span class='line'>  <span class="bp">CGPoint</span> <span class="n">center</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">center</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">bounds</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">width</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">center</span><span class="p">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">.</span><span class="n">origin</span><span class="p">.</span><span class="n">y</span> <span class="o">+</span> <span class="n">bounds</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">height</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// The largest circle will circumstribe the view</span>
+</span><span class='line'>  <span class="kt">float</span> <span class="n">maxRadius</span> <span class="o">=</span> <span class="n">hypot</span><span class="p">(</span><span class="n">bounds</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">width</span><span class="p">,</span> <span class="n">bounds</span><span class="p">.</span><span class="n">size</span><span class="p">.</span><span class="n">height</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// 3. Init an instace of UIBezierPath</span>
+</span><span class='line'>  <span class="bp">UIBezierPath</span> <span class="o">*</span><span class="n">path</span> <span class="o">=</span> <span class="p">[[</span><span class="bp">UIBezierPath</span> <span class="n">alloc</span><span class="p">]</span> <span class="n">init</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// 4. Call appropriate drawing API in UIBezierPath</span>
+</span><span class='line'>  <span class="p">[</span><span class="n">path</span> <span class="nl">addArcWithCenter</span><span class="p">:</span><span class="n">center</span>
+</span><span class='line'>                  <span class="nl">radius</span><span class="p">:</span><span class="n">maxRadius</span>
+</span><span class='line'>              <span class="nl">startAngle</span><span class="p">:</span><span class="mf">0.0</span>
+</span><span class='line'>                <span class="nl">endAngle</span><span class="p">:</span><span class="n">M_PI</span> <span class="o">*</span> <span class="mf">2.0</span>
+</span><span class='line'>               <span class="nl">clockwise</span><span class="p">:</span><span class="nb">YES</span><span class="p">];</span>
+</span><span class='line'>  
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Configure the drawing color to light gray</span>
+</span><span class='line'>  <span class="p">[[</span><span class="bp">UIColor</span> <span class="n">lightGrayColor</span><span class="p">]</span> <span class="n">setStroke</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// 5. Draw the line!</span>
+</span><span class='line'>  <span class="p">[</span><span class="n">path</span> <span class="n">stroke</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2><br></h2>
+
+<h2>Event Handler &amp; Redrawing</h2>
+
+<ul>
+<li>When user touches a view, the view is sent the message <strong>touchesBegan:withEvent:</strong></li>
+<li>It&rsquo;s a view&rsquo;s event handler in the <strong>run loop</strong></li>
+</ul>
+
+
+<blockquote><p>When an app is launched, it starts a run loop, or run lifecycle. Its job is to listen for events, such as touch. When an event occurs, it finds the appropriate handler methods for event. Once finished, control returns to the run loop.</p><footer><strong>@developer.BNR</strong></footer></blockquote>
+
+
+<ul>
+<li>When <strong>run loop</strong> regains control, it checks a list of &ldquo;dirty views&rdquo; - views that need to be re-rendered</li>
+<li>Then <strong>run loop</strong> then sends the <strong>drawRect:</strong> message to those &ldquo;dirty views&rdquo;</li>
+<li>To get a view on the re-rendered lists, you <strong>must</strong> send view the message <strong>setNeedDisplay</strong></li>
+</ul>
+
+
+<figure class='code'><figcaption><span>implement event handler when touch begins in vew </span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="c1">// When a finger touches the screen</span>
+</span><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">touchesBegan:</span><span class="p">(</span><span class="bp">NSSet</span> <span class="o">*</span><span class="p">)</span><span class="nv">touches</span> <span class="nf">withEvent:</span><span class="p">(</span><span class="bp">UIEvent</span> <span class="o">*</span><span class="p">)</span><span class="nv">event</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Get 3 random numbers between 0 and 1</span>
+</span><span class='line'>    <span class="kt">float</span> <span class="n">red</span> <span class="o">=</span> <span class="p">(</span><span class="n">arc4random</span><span class="p">()</span> <span class="o">%</span> <span class="mi">100</span><span class="p">)</span> <span class="o">/</span> <span class="mf">100.0</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">float</span> <span class="n">green</span> <span class="o">=</span> <span class="p">(</span><span class="n">arc4random</span><span class="p">()</span> <span class="o">%</span> <span class="mi">100</span><span class="p">)</span> <span class="o">/</span> <span class="mf">100.0</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">float</span> <span class="n">blue</span> <span class="o">=</span> <span class="p">(</span><span class="n">arc4random</span><span class="p">()</span> <span class="o">%</span> <span class="mi">100</span><span class="p">)</span> <span class="o">/</span> <span class="mf">100.0</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="bp">UIColor</span> <span class="o">*</span><span class="n">randomColor</span> <span class="o">=</span> <span class="p">[</span><span class="bp">UIColor</span> <span class="nl">colorWithRed</span><span class="p">:</span><span class="n">red</span>
+</span><span class='line'>                                           <span class="nl">green</span><span class="p">:</span><span class="n">green</span>
+</span><span class='line'>                                            <span class="nl">blue</span><span class="p">:</span><span class="n">blue</span>
+</span><span class='line'>                                           <span class="nl">alpha</span><span class="p">:</span><span class="mf">1.0</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nb">self</span><span class="p">.</span><span class="n">circleColor</span> <span class="o">=</span> <span class="n">randomColor</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>send view setNeedsDisplay message in accessor </span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">setCircleColor:</span><span class="p">(</span><span class="bp">UIColor</span> <span class="o">*</span><span class="p">)</span><span class="nv">circleColor</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nb">self</span><span class="p">.</span><span class="n">circleColor</span> <span class="o">=</span> <span class="n">circleColor</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// send the view message to re-render</span>
+</span><span class='line'>  <span class="p">[</span><span class="nb">self</span> <span class="n">setNeedsDisplay</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2><br></h2>
+
+<h3>Reference</h3>
+
+<ol>
+<li>Stanford iOS 7 development</li>
+<li><a href="https://developer.apple.com/library/mac/navigation/">Mac Developer Library</a></li>
+<li><a href="http://www.bignerdranch.com/">Big Nerd Ranch</a></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[road to iOS 0.5]]></title>
+    <link href="http://pigfly.github.io/blog/2014/09/road-to-ios-0-dot-5/"/>
+    <updated>2014-09-26T01:14:19+10:00</updated>
+    <id>http://pigfly.github.io/blog/2014/09/road-to-ios-0-dot-5</id>
+    <content type="html"><![CDATA[<h2>Interface builder, Connections, Initializers</h2>
+
+<h3>Interface builder</h3>
+
+<ul>
+<li><strong>StoryBoard</strong>
+
+<ul>
+<li>easy way, less flexible, hard to do programmatically</li>
+</ul>
+</li>
+<li><strong>XIB</strong>
+
+<ul>
+<li>create a view only, easy to do programmatically</li>
+</ul>
+</li>
+</ul>
+
+
+<!--more-->
+
+
+<h4>What is XIB</h4>
+
+<ul>
+<li>XIB stands for XML Interface Builder</li>
+<li><strong>Object editor</strong>, you create and configure objects like buttons and controllers, save them into archive called XIB</li>
+</ul>
+
+
+<h4>What is NIB</h4>
+
+<ul>
+<li>When you build app, the XIB file is compiled into NIB file for efficiency</li>
+<li>Then NIB file is copied into app&rsquo;s <em>bundle</em></li>
+<li><strong>Bundle</strong>, a directory contains app&rsquo;s executable and any resources</li>
+</ul>
+
+
+<h2><br></h2>
+
+<h3>Connections</h3>
+
+<ul>
+<li>Let one object know where another object is in memory, so that two objects can <strong>communicate</strong></li>
+<li>More precisely,  often between controller and view communication
+
+<ul>
+<li><strong>outlets</strong>, as property, no need to know who is sender</li>
+<li><strong>actions</strong>, as implementation, sometimes needed to know who is sender, so that you can perform desired action</li>
+</ul>
+</li>
+</ul>
+
+
+<h4>Connect your controller to appDelegate</h4>
+
+<ul>
+<li>To get your interface on screen, you have to connect your view controller to app&rsquo;s controller: <strong>appDelegate</strong></li>
+<li>That means, you need to make your controller as <em>root controller</em> of this window.</li>
+<li><strong>appDelegate</strong>, manages a single top-level <strong>UIWindow</strong> for the application.</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>make your controller as root controller </span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">BOOL</span><span class="p">)</span><span class="nf">application:</span><span class="p">(</span><span class="bp">UIApplication</span> <span class="o">*</span><span class="p">)</span><span class="nv">application</span>
+</span><span class='line'><span class="nf">didFinishLaunchingWithOptions:</span><span class="p">(</span><span class="bp">NSDictionary</span> <span class="o">*</span><span class="p">)</span><span class="nv">launchOptions</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>        <span class="c1">// init window</span>
+</span><span class='line'>        <span class="p">....</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// init your controller, set as root</span>
+</span><span class='line'>        <span class="n">YourViewController</span> <span class="o">*</span><span class="n">vc</span> <span class="o">=</span> <span class="p">[[</span><span class="n">YourViewController</span> <span class="n">alloc</span><span class="p">]</span> <span class="n">init</span><span class="p">];</span>
+</span><span class='line'>        <span class="nb">self</span><span class="p">.</span><span class="n">window</span><span class="p">.</span><span class="n">rootViewController</span> <span class="o">=</span> <span class="n">vc</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="nb">YES</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2><br></h2>
+
+<h3>Initializers</h3>
+
+<ul>
+<li>begins with word <strong>init</strong>, name convention only</li>
+<li><strong>designated initializer</strong>,  no matter how many init methods are,  one method is chosen as
+designated, it makes sure that every instance variable of an object is valid.</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>pattern for designated init</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">instancetype</span><span class="p">)</span><span class="nf">initWithxxx:</span><span class="p">(</span><span class="n">yyy</span><span class="p">)</span><span class="nv">zzz</span>
+</span><span class='line'>               <span class="nf">xxx:</span><span class="p">(</span><span class="n">yyy</span><span class="p">)</span><span class="nv">zzz</span><span class="p">...</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nb">self</span> <span class="o">=</span> <span class="p">[</span><span class="nb">super</span> <span class="n">init</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nb">self</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="p">...</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="nb">self</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>Controller Initializer</h4>
+
+<p>When an instance of controller is created, it is sent the message <strong>initWithNibName:bundle</strong></p>
+
+<figure class='code'><figcaption><span>controller init</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">instancetype</span><span class="p">)</span><span class="nf">initWithNibName:</span><span class="p">(</span><span class="bp">NSString</span> <span class="o">*</span><span class="p">)</span><span class="nv">nibNameOrNil</span>
+</span><span class='line'>              <span class="nf">bundle:</span><span class="p">(</span><span class="bp">NSBundle</span> <span class="o">*</span><span class="p">)</span><span class="nv">nibBundleOrNil</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nb">self</span> <span class="o">=</span> <span class="p">[</span><span class="nb">super</span> <span class="nl">initWithNibName</span><span class="p">:</span><span class="n">nibNameOrNil</span> <span class="nl">bundle</span><span class="p">:</span><span class="n">nibBundleOrNil</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nb">self</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="p">....</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="nb">self</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>Instancetype</h4>
+
+<ul>
+<li>Why not return specific type ?  all about polymorphism</li>
+<li>Deal with the problem if the class was subclassed but sending this init message to subclass :(</li>
+<li>Return the type of the caller</li>
+</ul>
+
+
+<h2><br></h2>
+
+<h3>Reference</h3>
+
+<ol>
+<li>Stanford iOS 7 development</li>
+<li><a href="https://developer.apple.com/library/mac/navigation/">Mac Developer Library</a></li>
+<li><a href="http://www.bignerdranch.com/">Big Nerd Ranch</a></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[road to iOS 0.4]]></title>
+    <link href="http://pigfly.github.io/blog/2014/09/road-to-ios-0-dot-4/"/>
+    <updated>2014-09-06T12:14:19+10:00</updated>
+    <id>http://pigfly.github.io/blog/2014/09/road-to-ios-0-dot-4</id>
+    <content type="html"><![CDATA[<h2>Multiple MVCs</h2>
+
+<h3>Two multiple MVC controllers</h3>
+
+<ul>
+<li><strong>UINavigationController</strong>
+
+<ul>
+<li>often used for a more detailed view (e.g. calendar in iOS)</li>
+</ul>
+</li>
+<li><strong>UITabBarController</strong>
+
+<ul>
+<li>often used for views have no logical connections (e.g. timer in iOS)</li>
+</ul>
+</li>
+</ul>
+
+
+<!--more-->
+
+
+<h3>What is UINavigationController</h3>
+
+<blockquote><p>Whenever an iOS app displays a user interface, the displayed content is managed by a view controller or a group of view controllers coordinating with each other. Therefore, view controllers provide the skeletal framework on which you build your apps.</p><footer><strong>@developer.apple</strong> <cite><a href='https://developer.apple.com/library/ios/featuredarticles/ViewControllerPGforiPhoneOS/Introduction/Introduction.html#//apple_ref/doc/uid/TP40007457'>About View Controllers</a></cite></footer></blockquote>
+
+
+<ul>
+<li>It&rsquo;s a View Controller <strong>manages stacks of other view controllers</strong></li>
+<li>An MVC&rsquo;s view is another MVC</li>
+</ul>
+
+
+<p><img src="http://pigfly.github.io/images/ios/navigation_interface.png" width="600" height="480" title="navigation interface overview" ></p>
+
+<p><a href="https://developer.apple.com/library/ios/featuredarticles/ViewControllerPGforiPhoneOS/Art/navigation_interface_2x.png">image source</a></p>
+
+<p>If user wants to see more detail information about current view, navigation controller will push the view from root view->list view->detail view.</p>
+
+<h2><br></h2>
+
+<h3>How does UINavigationController work</h3>
+
+<h4>Overview</h4>
+
+<script type="text/javascript" src="http://pigfly.github.io/javascripts/libs/jssor.core.js"></script>
+
+
+<script type="text/javascript" src="http://pigfly.github.io/javascripts/libs/jssor.utils.js"></script>
+
+
+<script type="text/javascript" src="http://pigfly.github.io/javascripts/libs/jssor.slider.min.js"></script>
+
+
+<script type="text/javascript" src="http://pigfly.github.io/javascripts/slides.js"></script>
+
+
+<div id="slider1_container" style="position: relative; top: 0px; left: 0px; width: 600px;
+        height: 300px;">
+
+        <!-- Loading Screen -->
+        <div u="loading" style="position: absolute; top: 0px; left: 0px;">
+            <div style="filter: alpha(opacity=70); opacity:0.7; position: absolute; display: block;
+                background-color: #000000; top: 0px; left: 0px;width: 100%;height:100%;">
+            </div>
+            <div style="position: absolute; display: block; background: url(/images/loading.gif) no-repeat center center;
+                top: 0px; left: 0px;width: 100%;height:100%;">
+            </div>
+        </div>
+
+        <!-- Slides Container -->
+        <div u="slides" style="cursor: move; position: absolute; left: 0px; top: 0px; width: 600px; height: 300px;
+            overflow: hidden;">
+            <div><img u="image" src="http://pigfly.github.io/images/ios/mvc_working_together1.png" /></div>
+            <div><img u="image" src="http://pigfly.github.io/images/ios/mvc_working_together2.png" /></div>
+            <div><img u="image" src="http://pigfly.github.io/images/ios/mvc_working_together3.png" /></div>
+            <div><img u="image" src="http://pigfly.github.io/images/ios/mvc_working_together4.png" /></div>
+        </div>
+        
+        <style>
+            .jssorb03 div, .jssorb03 div:hover, .jssorb03 .av
+            {
+                background: url(/images/b03.png) no-repeat;
+                overflow:hidden;
+                cursor: pointer;
+            }
+            .jssorb03 div { background-position: -5px -4px; }
+            .jssorb03 div:hover, .jssorb03 .av:hover { background-position: -35px -4px; }
+            .jssorb03 .av { background-position: -65px -4px; }
+            .jssorb03 .dn, .jssorb03 .dn:hover { background-position: -95px -4px; }
+        </style>
+        <!-- bullet navigator container -->
+        <div u="navigator" class="jssorb03" style="position: absolute; bottom: 4px; left: 6px;">
+            <!-- bullet navigator item prototype -->
+            <div u="prototype" style="position: absolute; width: 21px; height: 21px; text-align:center; line-height:21px; color:white; font-size:12px;"><NumberTemplate></NumberTemplate></div>
+        </div>
+
+</div>
+
+
+<ul>
+<li><strong>Segue</strong>: one MVC goes to the other MVCs, or a visual transition from one scene to another</li>
+<li><strong>Independent MVC</strong>: each MVC is independent, it&rsquo;s encapsulated in its own view controller</li>
+<li><strong>No memory between MVCs</strong>: everytime we push(segue) to another MVC, we create a new one, <strong>old one gets dealloc from the heap</strong>. You may need variables to store information if you want persistent data between segues</li>
+<li>When you create variables to store information, outlets in new view is not set yet.</li>
+</ul>
+
+
+<h4>Detail</h4>
+
+<p>A navigation controller is a container view controller—that is, <strong>it embeds the content of other view controllers inside of itself</strong>. You access a navigation controller’s view from its view property. This view incorporates:</p>
+
+<ul>
+<li><strong>navigation bar</strong>
+
+<ul>
+<li>an NSArray of UIBarButtonItems</li>
+<li>the back button will be generated automatically</li>
+</ul>
+</li>
+<li><strong>optional toolbar</strong>
+
+<ul>
+<li>an NSArray of UIBarButtonItems</li>
+<li>optional, not necessary for every content view controller</li>
+</ul>
+</li>
+<li><strong>content view</strong>
+
+<ul>
+<li>create your own</li>
+<li>by <strong>subclassing either the UIViewController</strong> class or the UITableViewController class</li>
+</ul>
+</li>
+</ul>
+
+
+<p><img src="http://pigfly.github.io/images/ios/UINavigationController_view_hierarchy.jpg" width="600" height="600" title="UINavigationController view components" ></p>
+
+<h2><br></h2>
+
+<h3>How does UINavigationController work (Cont.)</h3>
+
+<h4>Push the view to screen</h4>
+
+<ul>
+<li>often, in Xcode, we use push segue and along with its identifier to connect different MVCs</li>
+<li>however, you can do this programmatically with <code>- (void)pushViewControllerAnimated:(BOOL)animated;</code></li>
+</ul>
+
+
+<p><img src="http://pigfly.github.io/images/ios/segue.png" width="600" height="400" title="segue" ></p>
+
+<h4>Take the view off screen</h4>
+
+<ul>
+<li>often, user hits the back button on the top left of the screen to get back to the parent view</li>
+<li>however, you can do this programmatically with <code>- (void)popViewControllerAnimated:(BOOL)animated;</code></li>
+</ul>
+
+
+<h4>Prepare for the segues</h4>
+
+<p>The segue offers the source VC the opportunity to “prepare” the new VC to come on screen. This method is sent to the VC that contains the button that initiated the segue:</p>
+
+<figure class='code'><figcaption><span>prepare for segue</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">prepareForSegue:</span><span class="p">(</span><span class="bp">UIStoryboardSegue</span> <span class="o">*</span><span class="p">)</span><span class="nv">segue</span> <span class="nf">sender:</span><span class="p">(</span><span class="kt">id</span><span class="p">)</span><span class="nv">sender</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">// check the segue id we set in storyboard</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">([</span><span class="n">segue</span><span class="p">.</span><span class="n">identifier</span> <span class="nl">isEqualToString</span><span class="p">:@</span><span class="err">“</span><span class="n">DoSomething</span><span class="err">”</span><span class="p">])</span> <span class="p">{</span>
+</span><span class='line'>      <span class="c1">// check if the destination is correct by checking class reference</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">([</span><span class="n">segue</span><span class="p">.</span><span class="n">destinationViewController</span> <span class="nl">isKindOfClass</span><span class="p">:[</span><span class="n">DoSomethingVC</span> <span class="k">class</span><span class="p">]])</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">DoSomethingVC</span> <span class="o">*</span><span class="n">doVC</span> <span class="o">=</span> <span class="p">(</span><span class="n">DoSomethingVC</span> <span class="o">*</span><span class="p">)</span><span class="n">segue</span><span class="p">.</span><span class="n">destinationViewController</span><span class="p">;</span>
+</span><span class='line'>              <span class="c1">// e.g. doVC.date = getDateFromSomewhere(...);</span>
+</span><span class='line'>              <span class="n">doVC</span><span class="p">.</span><span class="n">neededInfo</span> <span class="o">=</span> <span class="p">...;</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>Push, Pop lifecycle</h4>
+
+<p><img src="http://pigfly.github.io/images/ios/uinavigation_lifecycle.png" width="600" height="300" title="push pop lifecycle" ></p>
+
+<h2><br></h2>
+
+<h3>Conclusion</h3>
+
+<ul>
+<li>UINavigationController is container view controller to manage other view controllers(MVCs)</li>
+<li>Each MVC in UINavigationController is well encapsulated and independent</li>
+<li>UINavigationController mainly consists of three parts: navigation bar, navigation toolbar, content views(other MVCs)</li>
+<li>UINavigationController uses push segue and pop segue to make transition between content views(other MVCs)</li>
+<li>Segues use prepareForSegue to prepare data between different pushes</li>
+</ul>
+
+
+<h2><br></h2>
+
+<h3>Reference</h3>
+
+<ol>
+<li>Stanford iOS 7 development</li>
+<li><a href="https://developer.apple.com/library/mac/navigation/">Mac Developer Library</a></li>
+<li><a href="http://adoptioncurve.net/archives/2013/04/how-a-navigation-based-app-fits-together">How a Navigation-based App Fits Together</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/uikit/reference/UINavigationController_Class/Reference/Reference.html#//apple_ref/occ/instp/UINavigationController/navigationBar">UINavigationController Class Reference</a></li>
+<li><a href="https://developer.apple.com/library/ios/featuredarticles/ViewControllerPGforiPhoneOS/Introduction/Introduction.html#//apple_ref/doc/uid/TP40007457">View Controller Programming Guide for iOS</a></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[road to iOS 0.3]]></title>
+    <link href="http://pigfly.github.io/blog/2014/09/road-to-ios-0-dot-3/"/>
+    <updated>2014-09-01T19:28:13+10:00</updated>
+    <id>http://pigfly.github.io/blog/2014/09/road-to-ios-0-dot-3</id>
+    <content type="html"><![CDATA[<h2>NSNotification</h2>
+
+<h3>What is Notification</h3>
+
+<ul>
+<li>It&rsquo;s a message <strong>sent to one or more observing objects</strong> to <strong>inform</strong> them of <strong>an event</strong> in a program</li>
+<li>a way for an object that initiates or handles a program event to communicate with any number of objects that want to know about that event.</li>
+<li>A blind structured way of communication (<strong>notification doesn’t have to know what those observers are</strong>)</li>
+<li>A broadcast radio station model in MVC</li>
+<li>A very similar idea like the <strong>event listener model</strong> in Java</li>
+</ul>
+
+
+<!--more-->
+
+
+<h3>How does Notification work</h3>
+
+<ul>
+<li>an object post a notification to notification center</li>
+<li>notification center broadcast the event</li>
+<li>event goes to the observer who registers itself at notification center</li>
+</ul>
+
+
+<p><img src="http://pigfly.github.io/images/ios/notificationcenter.png" title="UIViewController Lifecycle" ></p>
+
+<h3>Benefit of Broadcast Model in Notification</h3>
+
+<blockquote><p>The object sending (or posting) the notification doesn’t have to know what those observers are. Notification is thus a powerful mechanism for attaining coordination and cohesion in a program. It reduces the need for strong dependencies between objects in a program (such dependencies would reduce the reusability of those objects).</p><footer><strong>@developer.apple</strong> <cite><a href='https://developer.apple.com/library/mac/documentation/General/Conceptual/DevPedia-CocoaCore/Notification.html#//apple_ref/doc/uid/TP40008195-CH35'>Notification</a></cite></footer></blockquote>
+
+
+<h2><br></h2>
+
+<h3>Get default notification</h3>
+
+<p>Each running Cocoa program has a default notification center. You typically don’t create your own.</p>
+
+<figure class='code'><figcaption><span>get default notification</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">[</span><span class="bp">NSNotificationCenter</span> <span class="n">defaultCenter</span><span class="p">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Register at notification center</h3>
+
+<p>Register observer(yourself) at notification center if you want to listen to broadcast, In this example, we are listening to system broadcast(UIContentSizeCategoryDidChangeNotification)</p>
+
+<figure class='code'><figcaption><span>register at notification</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="c1">// the oberserver here is controller itself</span>
+</span><span class='line'><span class="c1">// object : whos change you&#39;re interested in. Nil, meaning anyone can send notification to controller</span>
+</span><span class='line'><span class="c1">// name is the name of the station</span>
+</span><span class='line'><span class="c1">// selector: once you receive notification, what you will do</span>
+</span><span class='line'><span class="p">[[</span><span class="bp">NSNotificationCenter</span> <span class="n">defaultCenter</span><span class="p">]</span> <span class="nl">addObserver</span><span class="p">:</span><span class="nb">self</span>
+</span><span class='line'>                                         <span class="nl">selector</span><span class="p">:</span><span class="k">@selector</span><span class="p">(</span><span class="nl">preferredFontsChanged</span><span class="p">:)</span>
+</span><span class='line'>                                             <span class="nl">name</span><span class="p">:</span><span class="n">UIContentSizeCategoryDidChangeNotification</span>
+</span><span class='line'>                                           <span class="nl">object</span><span class="p">:</span><span class="nb">nil</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// the method which you create to handle the recieved notification</span>
+</span><span class='line'><span class="p">-(</span><span class="kt">void</span><span class="p">)</span><span class="nf">preferredFontsChanged:</span><span class="p">(</span><span class="bp">NSNotification</span> <span class="o">*</span><span class="p">)</span><span class="nv">notification</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="p">[</span><span class="nb">self</span> <span class="n">usePreferredFonts</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">-(</span><span class="kt">void</span><span class="p">)</span><span class="nf">usePreferredFonts</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="p">...</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Remove observer at notification center</h3>
+
+<p>Failure to remove yourself can sometimes result in crashers.</p>
+
+<figure class='code'><figcaption><span>remove yourself at notification</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">[[</span><span class="bp">NSNotificationCenter</span> <span class="n">defaultCenter</span><span class="p">]</span> <span class="nl">removeObserver</span><span class="p">:</span><span class="n">someObserver</span><span class="p">];</span>
+</span><span class='line'><span class="c1">// or</span>
+</span><span class='line'><span class="c1">// use this for best practise, since you may listen to several stations at same time</span>
+</span><span class='line'><span class="c1">// simply remove yourself as observer will result in failure of listening to other stations.</span>
+</span><span class='line'><span class="p">[[</span><span class="bp">NSNotificationCenter</span> <span class="n">defaultCenter</span><span class="p">]</span> <span class="nl">removeObserver</span><span class="p">:</span><span class="nb">self</span> <span class="nl">name</span><span class="p">:</span><span class="n">UIContentSizeCategoryDidChangeNotification</span> <span class="nl">object</span><span class="p">:</span><span class="nb">nil</span><span class="p">];</span>
+</span><span class='line'><span class="c1">// or put the dealloc in viewWillDisappear</span>
+</span><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">dealloc</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="c1">// be careful in this method! can’t access properties! you are almost gone from heap!</span>
+</span><span class='line'>    <span class="p">[[</span><span class="bp">NSNotificationCenter</span> <span class="n">defaultCenter</span><span class="p">]</span> <span class="nl">removeObserver</span><span class="p">:</span><span class="nb">self</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2><br></h2>
+
+<h3>Reference</h3>
+
+<ol>
+<li>Stanford iOS 7 development</li>
+<li><a href="https://developer.apple.com/library/mac/navigation/">Mac Developer Library</a></li>
+<li><a href="https://developer.apple.com/library/mac/documentation/General/Conceptual/DevPedia-CocoaCore/Notification.html#//apple_ref/doc/uid/TP40008195-CH35">Cocoa Core Competencies</a></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[road to iOS 0.2]]></title>
+    <link href="http://pigfly.github.io/blog/2014/09/road-to-ios-0-dot-2/"/>
+    <updated>2014-09-01T12:36:03+10:00</updated>
+    <id>http://pigfly.github.io/blog/2014/09/road-to-ios-0-dot-2</id>
+    <content type="html"><![CDATA[<h2>View Controller Lifecycle (UIViewController_Class)</h2>
+
+<h3>Overview</h3>
+
+<ol>
+<li><code>awakeFromNib</code>, nib here means storyboard</li>
+<li>outlets get set</li>
+<li><code>viewDidLoad</code></li>
+<li><code>viewWillLayoutSubviews:</code> and <code>viewDidLayoutSubviews:</code></li>
+<li><code>viewWillAppear:</code> and <code>viewDidAppear:</code> etc. (both repeatedly)</li>
+<li><code>didReceiveMemoryWarning</code></li>
+</ol>
+
+
+<!--more-->
+
+
+<h3>awakeFromNib</h3>
+
+<ul>
+<li><code>- (void)awakeFromNib</code></li>
+<li>Sent to all objects that come out of a storyboard (including your Controller)</li>
+<li>Happens <strong>before</strong> outlets are set! (i.e. before the MVC is “loaded”)</li>
+<li><strong>After</strong> an object receives an awakeFromNib message, it is guaranteed to have all its outlet instance variables set</li>
+<li>Anything that would go in your Controller’s init method would have to go in awakeFromNib</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>example of init. awakeFromNib</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">setup</span><span class="p">{};</span> <span class="c1">//dosomething which can’t wait until viewDidLoad</span>
+</span><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">awakeFromNib</span> <span class="p">{</span> <span class="p">[</span><span class="nb">self</span> <span class="n">setup</span><span class="p">];</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>viewDidLoad</h3>
+
+<ul>
+<li>Only get called <strong>once</strong></li>
+<li><strong>After</strong> instantiation and outlet-setting, viewDidLoad is called</li>
+<li><strong>Before</strong> the actual screen shows up</li>
+<li>Geometry of your view (its bounds) is <strong>not</strong> set yet!</li>
+<li>A fantistic place for init. Better than your controller init. for your outlet now is set!</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>example of init. button title in viewDidLoad</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="k">@interface</span> <span class="nc">ViewController</span> <span class="p">()</span>
+</span><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="k">weak</span><span class="p">,</span> <span class="k">nonatomic</span><span class="p">)</span> <span class="kt">IBOutlet</span> <span class="bp">UIButton</span> <span class="o">*</span><span class="n">outlineButton</span><span class="p">;</span>
+</span><span class='line'><span class="k">@end</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">-</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">viewDidLoad</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="c1">// always call super for letting superclass init.</span>
+</span><span class='line'>    <span class="p">[</span><span class="nb">super</span> <span class="n">viewDidLoad</span><span class="p">];</span>
+</span><span class='line'>  <span class="c1">// Do any additional setup after loading the view, typically from a nib.</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// because we are not textview, we have to convert title to mutablestring</span>
+</span><span class='line'>    <span class="c1">// then set the title</span>
+</span><span class='line'>    <span class="bp">NSMutableAttributedString</span> <span class="o">*</span><span class="n">title</span> <span class="o">=</span> <span class="p">[[</span><span class="bp">NSMutableAttributedString</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithString</span><span class="p">:</span><span class="nb">self</span><span class="p">.</span><span class="n">outlineButton</span><span class="p">.</span><span class="n">currentTitle</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">[</span><span class="n">title</span> <span class="nl">setAttributes</span><span class="p">:</span><span class="l">@{</span> <span class="nl">NSStrokeWidthAttributeName</span> <span class="p">:</span> <span class="mi">@5</span><span class="p">,</span>
+</span><span class='line'>                            <span class="nl">NSStrokeColorAttributeName</span> <span class="p">:</span> <span class="nb">self</span><span class="p">.</span><span class="n">outlineButton</span><span class="p">.</span><span class="n">tintColor</span><span class="l">}</span>
+</span><span class='line'>                   <span class="nl">range</span><span class="p">:</span><span class="n">NSMakeRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">title</span><span class="p">.</span><span class="n">length</span><span class="p">)];</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">[</span><span class="nb">self</span><span class="p">.</span><span class="n">outlineButton</span> <span class="nl">setAttributedTitle</span><span class="p">:</span><span class="n">title</span> <span class="nl">forState</span><span class="p">:</span><span class="n">UIControlStateNormal</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>viewWillLayoutSubviews: and viewDidLayoutSubviews:</h3>
+
+<ul>
+<li>Called any time a view’s frame changed and its subviews were thus re-layed out. e.g. autorotation</li>
+<li>Put Geometry codes here</li>
+</ul>
+
+
+<h3>viewWillAppear: and viewDidAppear: (both repeatedly)</h3>
+
+<ul>
+<li>Repeatedly: view will only get “loaded”(viewDidLoad) once, but it might appear and disappear a lot.</li>
+<li><code>- (void)viewWillAppear:(BOOL)animated;</code> a place to do something if things you display are changing while your MVC is off-screen.</li>
+<li><code>- (void)viewWillDisappear:(BOOL)animated</code> a place to put “remember what’s going on” and cleanup code.</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>example of viewWillDisappear</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">viewWillDisappear:</span><span class="p">(</span><span class="kt">BOOL</span><span class="p">)</span><span class="nv">animated</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="p">[</span><span class="nb">super</span> <span class="nl">viewWillDisappear</span><span class="p">:</span><span class="n">animated</span><span class="p">];</span> <span class="c1">// call super in all the viewWill/Did... methods </span>
+</span><span class='line'><span class="c1">// let’s be nice to the user and remember the scroll position they were at ...</span>
+</span><span class='line'><span class="p">[</span><span class="nb">self</span> <span class="n">rememberScrollPosition</span><span class="p">];</span> <span class="c1">// we’ll have to implement this</span>
+</span><span class='line'><span class="c1">// do some other clean up now that we’ve been removed from the screen</span>
+</span><span class='line'><span class="p">[</span><span class="nb">self</span> <span class="n">saveDataToPermanentStore</span><span class="p">];</span> <span class="c1">// maybe do in did instead?</span>
+</span><span class='line'><span class="c1">// but be careful not to do anything time-consuming here, or app will be sluggish</span>
+</span><span class='line'><span class="c1">// maybe even kick off a thread to do what needs doing here</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>didReceiveMemoryWarning</h3>
+
+<ul>
+<li>iOS gets its right to kill your app if you are a memory eater&hellip;</li>
+<li>put clean up  and dealloc codes here if necessary</li>
+<li>set <code>strong</code> pointer to <code>nil</code></li>
+</ul>
+
+
+<h2><br></h2>
+
+<h3>Picture of View Controller Lifecycle</h3>
+
+<p><img src="http://pigfly.github.io/images/ios/uiviewcontroller_lifecycle.png" title="UIViewController Lifecycle" ></p>
+
+<p><a href="http://rdkw.wordpress.com/2013/02/24/ios-uiviewcontroller-lifecycle/">image source</a></p>
+
+<h2><br></h2>
+
+<h3>Reference</h3>
+
+<ol>
+<li>Stanford iOS 7 development</li>
+<li><a href="https://developer.apple.com/library/mac/navigation/">Mac Developer Library</a></li>
+<li><a href="https://developer.apple.com/library/ios/documentation/uikit/reference/UIViewController_Class/Reference/Reference.html">UIViewController_Class Reference</a></li>
+<li><a href="https://developer.apple.com/library/ios/featuredarticles/viewcontrollerpgforiphoneos/ViewLoadingandUnloading/ViewLoadingandUnloading.html">ViewController Programming</a></li>
+<li><a href="http://stackoverflow.com/questions/5562938/looking-to-understand-the-ios-uiviewcontroller-lifecycle">Stackoverflow</a></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[road to iOS 0.1]]></title>
+    <link href="http://pigfly.github.io/blog/2014/08/road-to-ios-0-dot-1/"/>
+    <updated>2014-08-31T09:16:07+10:00</updated>
+    <id>http://pigfly.github.io/blog/2014/08/road-to-ios-0-dot-1</id>
+    <content type="html"><![CDATA[<h2>Attributed String &amp; UITextView in Objective-C</h2>
+
+<h3>What is Attributed String</h3>
+
+<p>Determine how text will render on the screen. You can think of <code>NSAttributedString</code> as an NSString where each character has an NSDictionary of &ldquo;attributes&rdquo;.</p>
+
+<figure class='code'><figcaption><span>example of creating attributed strings</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="c1">// this will create a dictionary for holding diifferent standard attributes</span>
+</span><span class='line'><span class="c1">// the name of attributes are global NSString constants</span>
+</span><span class='line'><span class="bp">NSDictionary</span> <span class="o">*</span><span class="n">attrsDictionary</span> <span class="o">=</span>
+</span><span class='line'>  <span class="c1">// specify font attributes</span>
+</span><span class='line'>  <span class="l">@{</span> <span class="nl">NSFontAttributeName</span> <span class="p">:</span>
+</span><span class='line'>       <span class="p">[</span><span class="bp">UIFont</span> <span class="nl">preferredFontWithTextStyle</span><span class="p">:</span><span class="n">UIFontTextStyleHeadline</span><span class="p">],</span>
+</span><span class='line'>  <span class="c1">// specify foreground attribute</span>
+</span><span class='line'>    <span class="nl">NSForegroundColorAttributeName</span> <span class="p">:</span> <span class="p">[</span><span class="bp">UIColor</span> <span class="n">greenColor</span><span class="p">],</span>
+</span><span class='line'>    <span class="nl">NSStrokeWidthAttributeName</span> <span class="p">:</span> <span class="p">@</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span>
+</span><span class='line'>    <span class="nl">NSStrokeColorAttributeName</span> <span class="p">:</span> <span class="p">[</span><span class="bp">UIColor</span> <span class="n">redColor</span><span class="p">]</span> <span class="l">}</span>
+</span><span class='line'><span class="c1">// creating attributed string using attribute dictionary</span>
+</span><span class='line'><span class="bp">NSAttributedString</span> <span class="o">*</span><span class="n">attrString</span> <span class="o">=</span>
+</span><span class='line'>  <span class="p">[[</span><span class="bp">NSAttributedString</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithString</span><span class="p">:</span><span class="s">@&quot;string&quot;</span> <span class="nl">attributes</span><span class="p">:</span><span class="n">attrsDictionary</span><span class="p">];</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<!--more-->
+
+
+<h3>What is NSRange</h3>
+
+<p>To specify subranges inside strings and arrays. It&rsquo;s a <strong>c structure</strong> defined as below:</p>
+
+<figure class='code'><figcaption><span>definition for NSRange</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="k">typedef</span> <span class="k">struct</span> <span class="bp">_NSRange</span> <span class="p">{</span>
+</span><span class='line'>    <span class="c1">// The start index (0 is the first, as in C arrays).</span>
+</span><span class='line'>      <span class="bp">NSUInteger</span> <span class="n">location</span><span class="p">;</span>
+</span><span class='line'>      <span class="c1">// The number of items in the range (can be 0).</span>
+</span><span class='line'>      <span class="bp">NSUInteger</span> <span class="n">length</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span> <span class="n">NSRange</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>NSNotFound</h3>
+
+<p>A value, or a constant that indicates that an item requested couldn’t be found or doesn’t exist.</p>
+
+<figure class='code'><figcaption><span>illustrate NSRange + NSNotFound</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="bp">NSString</span> <span class="o">*</span><span class="n">heystack</span> <span class="o">=</span> <span class="s">@&quot;heystack&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="bp">NSString</span> <span class="o">*</span><span class="n">needle</span> <span class="o">=</span> <span class="s">@&quot;hi&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="c1">// find the range of needle inside heystack</span>
+</span><span class='line'><span class="n">NSRange</span> <span class="n">r</span> <span class="o">=</span> <span class="p">[</span><span class="n">heystack</span> <span class="nl">rangeOfString</span><span class="p">:</span><span class="n">needle</span><span class="p">];</span>
+</span><span class='line'><span class="c1">// if fail to find, do something</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">location</span> <span class="o">==</span> <span class="n">NSNotFound</span><span class="p">)</span> <span class="p">{...}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>NSRangePointer</h3>
+
+<p>Just a <code>NSRange *</code> used as an method parameter</p>
+
+<h2><br></h2>
+
+<h3>Access attributes of NSAttributedString</h3>
+
+<ul>
+<li>get the value for an attribute</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>get the value for an attribute from NSAttributedString</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">id</span><span class="p">)</span><span class="nf">attribute:</span><span class="p">(</span><span class="bp">NSString</span> <span class="o">*</span><span class="p">)</span><span class="nv">attributeName</span> <span class="nf">atIndex:</span><span class="p">(</span><span class="bp">NSUInteger</span><span class="p">)</span><span class="nv">index</span>
+</span><span class='line'>                                 <span class="nf">effectiveRange:</span><span class="p">(</span><span class="n">NSRangePointer</span><span class="p">)</span><span class="nv">aRange</span>
+</span><span class='line'><span class="c1">// attributeName: the name of standard attribute</span>
+</span><span class='line'><span class="c1">// aRange: If you don&#39;t need this value, pass NULL</span>
+</span><span class='line'><span class="c1">// return value: The value for the attribute named attributeName of the character at index index, or nil if there is no such attribute.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>get all attributes as NSDictionary</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>return all attributes as NSDictionary</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="bp">NSDictionary</span> <span class="o">*</span><span class="p">)</span><span class="nf">attributesAtIndex:</span><span class="p">(</span><span class="bp">NSUInteger</span><span class="p">)</span><span class="nv">index</span> <span class="nf">effectiveRange:</span><span class="p">(</span><span class="n">NSRangePointer</span><span class="p">)</span><span class="nv">aRange</span>
+</span><span class='line'><span class="c1">// return value: The attributes for the character at index.</span>
+</span><span class='line'><span class="c1">// aRange: If you don&#39;t need this value, pass NULL</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Set attributes of NSAttributedString</h3>
+
+<p>Since NSAttributedString is <strong>immutable</strong>, we need <code>NSMutableAttributedString</code> to do all the settings&hellip;</p>
+
+<figure class='code'><figcaption><span>setting attributes on characters</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="c1">// add an attribute to a range of characters </span>
+</span><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">addAttributes:</span><span class="p">(</span><span class="bp">NSDictionary</span> <span class="o">*</span><span class="p">)</span><span class="nv">attributes</span> <span class="nf">range:</span><span class="p">(</span><span class="n">NSRange</span><span class="p">)</span><span class="nv">range</span><span class="p">;</span>
+</span><span class='line'><span class="c1">// set attributes in a range</span>
+</span><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">setAttributes:</span><span class="p">(</span><span class="bp">NSDictionary</span> <span class="o">*</span><span class="p">)</span><span class="nv">attributes</span> <span class="nf">range:</span><span class="p">(</span><span class="n">NSRange</span><span class="p">)</span><span class="nv">range</span><span class="p">;</span>
+</span><span class='line'><span class="c1">// remove attribute in a range</span>
+</span><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">removeAttribute:</span><span class="p">(</span><span class="bp">NSString</span> <span class="o">*</span><span class="p">)</span><span class="nv">attributeName</span> <span class="nf">range:</span><span class="p">(</span><span class="n">NSRange</span><span class="p">)</span><span class="nv">range</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2><br></h2>
+
+<h3>NSAttributedString is not an NSString</h3>
+
+<p>It&rsquo;s not a subclass of <code>NSString</code>, methods of <code>NSString</code> don&rsquo;t apply for <code>NSAttributedString</code>. However, you can convert it to <code>NSString</code> using <strong>- (NSString *)string</strong>.</p>
+
+<figure class='code'><figcaption><span>NSAttributedString to NSString</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="bp">NSAttributedString</span> <span class="o">*</span><span class="n">attributedString</span> <span class="o">=</span> <span class="p">...;</span>
+</span><span class='line'><span class="bp">NSString</span> <span class="o">*</span><span class="n">substring</span> <span class="o">=</span> <span class="p">...;</span>
+</span><span class='line'><span class="n">NSRange</span> <span class="n">r</span> <span class="o">=</span> <span class="p">[[</span><span class="n">attributedString</span> <span class="n">string</span><span class="p">]</span> <span class="nl">rangeOfString</span><span class="p">:</span><span class="n">substring</span><span class="p">];</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2><br></h2>
+
+<h3>UITextView</h3>
+
+<ul>
+<li>Display multiline text using custom style</li>
+<li>selectable, editable, scrollable</li>
+</ul>
+
+
+<h4>Set text and attributes in UITextView using textStorage</h4>
+
+<ul>
+<li>NSTextStorage is a subclass of NSMutableAttributedString.</li>
+<li>simply modify it and the UITextView will <strong>automatically update</strong></li>
+</ul>
+
+
+<figure class='code'><figcaption><span>use textStorage to modify content in UITextView</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="k">@interface</span> <span class="nc">ViewController</span> <span class="p">()</span>
+</span><span class='line'><span class="k">@property</span> <span class="p">(</span><span class="k">weak</span><span class="p">,</span> <span class="k">nonatomic</span><span class="p">)</span> <span class="kt">IBOutlet</span> <span class="bp">UITextView</span> <span class="o">*</span><span class="n">body</span><span class="p">;</span>
+</span><span class='line'><span class="k">@end</span>
+</span><span class='line'><span class="c1">// Prototype: @property (nonatomic, readonly) NSTextStorage *textStorage</span>
+</span><span class='line'><span class="p">[</span><span class="nb">self</span><span class="p">.</span><span class="n">body</span><span class="p">.</span><span class="n">textStorage</span> <span class="nl">addAttributes</span><span class="p">:</span><span class="l">@{</span> <span class="nl">NSStrokeWidthAttributeName</span> <span class="p">:</span> <span class="mi">@3</span><span class="p">,</span>
+</span><span class='line'>                                        <span class="nl">NSStrokeColorAttributeName</span> <span class="p">:[</span><span class="bp">UIColor</span> <span class="n">purpleColor</span><span class="p">]</span><span class="l">}</span>
+</span><span class='line'>                               <span class="nl">range</span><span class="p">:</span><span class="nb">self</span><span class="p">.</span><span class="n">body</span><span class="p">.</span><span class="n">selectedRange</span><span class="p">];</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>Set font in UITextView</h4>
+
+<ul>
+<li>one thing to keep in mind, the <code>@property (nonatomic, strong) UIFont *font;</code> will apply a font to the entire UITextView</li>
+</ul>
+
+
+<h2><br></h2>
+
+<h3>Mindmap for NSAttributedString</h3>
+
+<p><img src="http://pigfly.github.io/images/ios/NSAttributedString.png" title="NSAttributedString Mindmap" ></p>
+
+<h2><br></h2>
+
+<h3>Reference</h3>
+
+<ol>
+<li>Stanford iOS 7 development</li>
+<li><a href="https://developer.apple.com/library/mac/navigation/">Mac Developer Library</a></li>
+<li><a href="http://www.apress.com/9781430260226">Beginning iOS 7 Development</a></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[road to iOS 0]]></title>
+    <link href="http://pigfly.github.io/blog/2014/08/road-to-ios-0/"/>
+    <updated>2014-08-30T18:31:18+10:00</updated>
+    <id>http://pigfly.github.io/blog/2014/08/road-to-ios-0</id>
+    <content type="html"><![CDATA[<h2>Dynamic Binding in Objective-C</h2>
+
+<h3>What is Dynamic Binding</h3>
+
+<p>Determining the methods of different kinds of objects to invoke at runtime rather than at compile-time.</p>
+
+<h3>Why we need Dynamic Binding</h3>
+
+<ol>
+<li>Since all objects live in the heap, there is no way for compiler to know which object will be created at compile time. In other words, memory for objects will be dynmaically allocated. So we need a mechanism to distinguish various objects and their associated properties, methods etc.</li>
+</ol>
+
+
+<!--more-->
+
+
+<ol>
+<li>Dynamic Binding enables polymorphsim. Different objects can have same interface, and by using the interface as a type, invoking methods in different objects. Here is a piece of code showing polymorphsim for objects in Objective-C.</li>
+</ol>
+
+
+<figure class='code'><figcaption><span>polymorphsim for objects</span><a href='http://pigfly.github.io/blog/2014/08/30/road-to-ios-0/'>link</a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="bp">NSArray</span> <span class="o">*</span><span class="n">ar</span> <span class="o">=</span> <span class="p">[</span><span class="bp">NSArray</span> <span class="nl">arrayWithObjects</span><span class="p">:</span><span class="n">car</span><span class="p">,</span> <span class="n">ship</span><span class="p">,</span> <span class="n">tiger</span><span class="p">,</span> <span class="nb">nil</span><span class="p">];</span>
+</span><span class='line'><span class="k">for</span> <span class="p">(</span><span class="kt">id</span> <span class="n">obj</span> <span class="k">in</span> <span class="n">ar</span><span class="p">)</span> <span class="p">{</span> <span class="p">[</span><span class="n">obj</span> <span class="n">run</span><span class="p">];}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>When do we need Dynamic Binding</h3>
+
+<ol>
+<li>mix objects of different classes in a collection (e.g. in an NSArray)</li>
+<li>support the “blind, structured” communication in MVC (i.e. delegation)</li>
+</ol>
+
+
+<h3>How Objective-C use dynamic binding for polymorphsim</h3>
+
+<p>The exact code executed, which is at runtime, is determined by:</p>
+
+<ol>
+<li>the unique method name(<strong>the selector</strong>)</li>
+<li>the object reference being invoked on(<strong>the reference</strong>)</li>
+</ol>
+
+
+<h2><br></h2>
+
+<h3>What is selector</h3>
+
+<p>A unique identifier for a method at runtime</p>
+
+<h3>Why we need selector</h3>
+
+<ol>
+<li>As mentioned earlier, the selector, and together with invoked object reference enable polymorphsim in objective-c. We can use selector for the above example, the selector could be used with an instance of each of the classes to invoke its run method—even though the implementation might be different for each.</li>
+</ol>
+
+
+<figure class='code'><figcaption><span>using selector in objective-c for different objects</span><a href='http://pigfly.github.io/blog/2014/08/30/road-to-ios-0/'>link</a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="kt">SEL</span> <span class="n">s</span> <span class="o">=</span> <span class="k">@selector</span><span class="p">(</span><span class="n">run</span><span class="p">);</span>
+</span><span class='line'><span class="p">[</span><span class="n">car</span> <span class="nl">performSelector</span><span class="p">:</span><span class="n">aSelector</span><span class="p">];</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ol>
+<li>When your View Controller have target-action pattern, usually we will use selector for invoking methods, rather than just sending message, for the communication from View to Controller is a blind structed way, there is no way for controller to figure out who is the sender until runtime.</li>
+</ol>
+
+
+<figure class='code'><figcaption><span>selector in target-action pattern for different objects</span><a href='http://pigfly.github.io/blog/2014/08/30/road-to-ios-0/'>link</a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="p">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">addTarget:</span><span class="p">(</span><span class="kt">id</span><span class="p">)</span><span class="nv">anObject</span> <span class="nf">action:</span><span class="p">(</span><span class="kt">SEL</span><span class="p">)</span><span class="nv">action</span> <span class="p">...;</span>
+</span><span class='line'><span class="p">[</span><span class="n">button</span> <span class="nl">addTarget</span><span class="p">:</span><span class="nb">self</span> <span class="nl">action</span><span class="p">:</span><span class="k">@selector</span><span class="p">(</span><span class="nl">digitPressed</span><span class="p">:)</span> <span class="p">...];</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>A cool selector usage</h3>
+
+<figure class='code'><figcaption><span>cool selector usages for different objects</span><a href='http://pigfly.github.io/blog/2014/08/30/road-to-ios-0/'>link</a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="c1">// let objects perform method in NSArray</span>
+</span><span class='line'><span class="p">[</span><span class="n">array</span> <span class="nl">makeObjectsPerformSelector</span><span class="p">:</span><span class="n">shootSelector</span><span class="p">];</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><br></p>
+
+<h2>Conclusion</h2>
+
+<p>The selector is usually used for performing polymorphsim behavior, it&rsquo;s part of dynamic binding mechanism in Objective-C.</p>
+
+<p><br></p>
+
+<h2>Protect ourselves from misusing dynamic binding</h2>
+
+<p><code>id</code> can facilitate polymorphsim, making codes more reusable. However, accidently invoking methods which don&rsquo;t exist in object can cause trouble. There are generally two ways to protect us by:</p>
+
+<ul>
+<li><strong>Introspection</strong>
+
+<ul>
+<li>Asking at runtime what class an object is or what messages can be sent to it</li>
+</ul>
+</li>
+<li><strong>Protocols</strong>
+
+<ul>
+<li>Does not specify the class of an object pointed to, but does specify what methods it implements.</li>
+<li>A syntax that is “in between” <code>id</code> and static typing</li>
+</ul>
+</li>
+</ul>
+
+
+<h3>Introspection</h3>
+
+<p>It&rsquo;s really about dependency checking&hellip;</p>
+
+<figure class='code'><figcaption><span>dependency checking</span><a href='http://pigfly.github.io/blog/2014/08/30/road-to-ios-0/'>link</a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="c1">// get class by sending class message to class</span>
+</span><span class='line'><span class="c1">// in this case, we send class message to NSString to check if obj inherents from NSString</span>
+</span><span class='line'><span class="k">if</span> <span class="p">([</span><span class="n">obj</span> <span class="nl">isKindOfClass</span><span class="p">:[</span><span class="bp">NSString</span> <span class="k">class</span><span class="p">]])</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">// if obj is subclass is NSString, we can safely cast</span>
+</span><span class='line'>    <span class="bp">NSString</span> <span class="o">*</span><span class="n">s</span> <span class="o">=</span> <span class="p">[(</span><span class="bp">NSString</span> <span class="o">*</span><span class="p">)</span><span class="n">obj</span> <span class="nl">stringByAppendingString</span><span class="p">:@</span><span class="err">”</span><span class="n">xyzzy</span><span class="err">”</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Sometimes, we also want to make sure some classes indeed hold methods we want to invoke&hellip;</p>
+
+<figure class='code'><figcaption><span>methods checking</span><a href='http://pigfly.github.io/blog/2014/08/30/road-to-ios-0/'>link</a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="c1">// respondsToSelector: returns whether an object responds to a given method</span>
+</span><span class='line'><span class="k">if</span> <span class="p">([</span><span class="n">obj</span> <span class="nl">respondsToSelector</span><span class="p">:</span><span class="k">@selector</span><span class="p">(</span><span class="n">shoot</span><span class="p">)])</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">[</span><span class="n">obj</span> <span class="n">shoot</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">([</span><span class="n">obj</span> <span class="nl">respondsToSelector</span><span class="p">:</span><span class="k">@selector</span><span class="p">(</span><span class="nl">shootAt</span><span class="p">:)])</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">[</span><span class="n">obj</span> <span class="nl">shootAt</span><span class="p">:</span><span class="n">target</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>A picture showing introspection life cycle</h4>
+
+<p><img src="http://pigfly.github.io/images/ios/introspection.png" title="introspection" ></p>
+
+<p><a href="https://developer.apple.com/library/mac/navigation/">image source</a></p>
+
+<p><br></p>
+
+<h2>Conclusion</h2>
+
+<p>Using polymorphsim with <code>id</code> greatly make codes more reusable, also, we can do dependency and method checking by using introspection.</p>
+
+<h2>Mindmap for dynamic binding</h2>
+
+<p><img src="http://pigfly.github.io/images/ios/dynamic-binding.png" title="Dynamic Binding Mindmap" ></p>
+
+<h2><br></h2>
+
+<h3>Reference</h3>
+
+<ol>
+<li>Stanford iOS 7 development</li>
+<li><a href="https://developer.apple.com/library/mac/navigation/">Mac Developer Library</a></li>
+<li><a href="http://www.apress.com/9781430260226">Beginning iOS 7 Development</a></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[perl week2 cont]]></title>
+    <link href="http://pigfly.github.io/blog/2014/08/perl-week2-cont/"/>
+    <updated>2014-08-30T17:28:42+10:00</updated>
+    <id>http://pigfly.github.io/blog/2014/08/perl-week2-cont</id>
+    <content type="html"><![CDATA[<h2>RegEx cont.</h2>
+
+<hr />
+
+<h3>Variables</h3>
+
+<ul>
+<li>Match vars.
+
+<ul>
+<li>if regex have parens i.e. groups</li>
+<li>if group got successful match
+
+<ul>
+<li>then the content of matched pattern stored in <code>$1</code>, meaning first match against first group</li>
+<li>e.g. <code>/(\S+)(\S+),(\S+)/</code> corresponding matched content is <code>print $1 $2 $3</code></li>
+</ul>
+</li>
+<li><strong>classical match idiom</strong>: <code>if(xx =~ xx) do sth else die</code></li>
+<li>three special vars.
+
+<ul>
+<li>a regex matching a string divides the string into 3 pars</li>
+<li><code>$&amp;</code>: the part actually matched</li>
+<li><code>$\backslash</code>: the part before matched</li>
+<li><code>$'</code>: the part after matched</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+
+<!--more-->
+
+
+<ul>
+<li><p>Noncapturing parens</p>
+
+<ul>
+<li>sometimes, we use parens only for precedence, however, it still trigger matching variable.</li>
+<li>how can we escape from that, to tell perl not to trigger matching var in parens ?</li>
+<li>to avoid triggering memory, change <code>(…)</code> to <code>(?:…)</code></li>
+<li>e.g. <code>/(\S+)(?:and|or)(\S+)/</code> the middle parens won&rsquo;t be counted as $2, instead, the last parens is $2.</li>
+</ul>
+</li>
+<li><p>Named captures</p>
+
+<ul>
+<li>even better way, to tell which parens I want to capture, and give name to that matching var.</li>
+<li>e.g. <code>/(?&lt;name1&gt;\S+)(lorem)/</code> now <code>print "$+{name1}"</code> will print the content of matching \S+ in the named capture you create.</li>
+</ul>
+</li>
+</ul>
+
+
+<hr />
+
+<h3>Substitution</h3>
+
+<ul>
+<li><code>s/old/new/</code>
+
+<ul>
+<li>old is <strong>RegEx</strong></li>
+<li><strong>new is treated as double quoted string</strong>, so if there is <code>$var</code> inside, will be replaced as its value. <strong>never think of putting RegEx in new!</strong></li>
+<li>RegEx triggers back reference var: <code>s/with(\w+)/without$1/</code> like said before, $1 is special var in double quoted string context, will be replaced by its value</li>
+<li>idiom: <code>if (s/old/new/) {…}</code></li>
+</ul>
+</li>
+<li>Alternate delimiter
+
+<ul>
+<li>e.g. <code>#^https://#http://#</code> again, don&rsquo;t put <code>^</code>in http, it&rsquo;s merely treated as &ldquo;string&rdquo;!</li>
+</ul>
+</li>
+<li>More Modes
+
+<ul>
+<li><strong>Global</strong> matching, <code>s/\s+/ /g</code> transform to canonical whitespace</li>
+<li>case-insensitive, <code>s/old/new/i</code></li>
+<li><code>.</code> including new lines, <code>s/old/new/s</code></li>
+</ul>
+</li>
+</ul>
+
+
+<hr />
+
+<ul>
+<li><strong>List-context match</strong>
+
+<ul>
+<li>you can store <strong>parens</strong> matched result in a list</li>
+<li>e.g. <code>my($first, $second, $third) = /(\S)(\S),(\S)/;</code></li>
+<li>e.g. <code>my @words = /(\w+)/g</code></li>
+</ul>
+</li>
+<li>**Non-greedy quantifier
+
+<ul>
+<li>quantifier normally go long, then back off</li>
+<li>we can tell perl go as short as you can !</li>
+<li><strong>Append <code>?</code> to <em>quantifier</em> to make it lazy</strong></li>
+</ul>
+</li>
+<li>Split function
+
+<ul>
+<li><code>my @fields = split /separator/, $string</code></li>
+<li>separator here is RegEx</li>
+<li><code>my @ip = split /\./, "192.168.1.1";</code></li>
+</ul>
+</li>
+<li>Case shifting
+
+<ul>
+<li><code>\U</code>: take every var following <code>\U</code>, make them uppercase</li>
+<li><code>\L</code>: take every var following <code>\L</code>, make them lowercase</li>
+<li><code>\u</code>: take first char of followed, make it uppercase</li>
+<li><code>\l</code>: take first char of followed, make it lowercase</li>
+<li><code>\E</code>: where case shifting stops</li>
+<li>N.B. all these happen in &ldquo;string&rdquo;!</li>
+<li>e.g. <code>s/(\w+)/\U$1/</code></li>
+<li>e.g. <code>s/(\w{2})/\u\L$1/ig</code> <strong>initial cap</strong></li>
+</ul>
+</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[perl week1 cont]]></title>
+    <link href="http://pigfly.github.io/blog/2014/08/perl-week1-cont/"/>
+    <updated>2014-08-30T02:59:53+10:00</updated>
+    <id>http://pigfly.github.io/blog/2014/08/perl-week1-cont</id>
+    <content type="html"><![CDATA[<h2>SLP week1: A review</h2>
+
+<h3>Design Choice</h3>
+
+<ul>
+<li>Perl, is eager to give you the answer, and try its best to guess an answer for you!</li>
+<li>No reserved word, prefix with var distinguish data from build-ins (so developers can add more build-ins later on without conflicts)</li>
+<li>in Perl, values are all scalars, we don&rsquo;t have data type explicitly stating numerical value and string, <strong>perl will take longest path to legal values, evaluate  it, then quit</strong>
+
+<ul>
+<li>e.g. scalar conversion <code>(13+4)."love" = "17love"</code>, <code>"12god" / 3 = 4</code></li>
+<li>e.g. <code>"recursion" x 3.3</code> = <code>recursionrecursionrecursion</code></li>
+</ul>
+</li>
+</ul>
+
+
+<!--more-->
+
+
+<hr />
+
+<ul>
+<li><code>=~</code> stands for searching for pattern e.g. <code>=~ /a*/</code></li>
+<li><p><code>use warning;</code> will warn you dangerous thing, but will still execute all code without stopping</p></li>
+<li><p>Syntax</p>
+
+<ul>
+<li>every statement ends with a semi-colon</li>
+<li>make sure block statement wrapped with <code>{</code> and <code>}</code></li>
+<li>case sensitive</li>
+<li>reference: <code>$ref = \$whence;</code> the <code>\</code> is to get the address of $var</li>
+</ul>
+</li>
+</ul>
+
+
+<h3>Variable</h3>
+
+<ul>
+<li><p>Variable Define</p>
+
+<ul>
+<li>check if defined: <code>defined($var)</code> the var is defined but has empty value is different from var isn&rsquo;t defined  (like C)</li>
+<li>e.g. <code>$line = &lt;STDIN&gt;; if (defined($line)) {…}</code> good practice</li>
+<li>e.g. <code>chomp( $line = &lt;STDIN&gt; )</code> to get rid of new line symbol good practice</li>
+<li>to release a var, garbage collect a var, use <code>undef($var)</code></li>
+</ul>
+</li>
+<li><p>Scalar var</p>
+
+<ul>
+<li><code>_</code> in numerical var is ignored e.g. <code>$money = 2020_22_11</code></li>
+<li>V string, list ASCII value e.g. <code>$lang = [v]80.101.22.11</code> <code>[v]</code>:optional</li>
+</ul>
+</li>
+<li><p>Scope of var</p>
+
+<ul>
+<li><code>my</code>: the inner block, within the <code>{</code> and <code>}</code></li>
+<li><code>local</code>: a copy of var within the <code>{</code> and <code>}</code></li>
+<li><code>our</code>: global</li>
+<li>once var get out of scope, garbage collected, totally garbage collected var evaluated to 0 !</li>
+</ul>
+</li>
+</ul>
+
+
+<h3>Condition &amp; Loop</h3>
+
+<ul>
+<li><p>True and False</p>
+
+<ul>
+<li>False: <code>"0"</code>, empty string, undefined var, and 0</li>
+</ul>
+</li>
+<li><p>Operators in Conditions</p>
+
+<ul>
+<li>operator set the context, again, guess an answer for you</li>
+<li><code>&lt;=&gt;</code> and <code>cpm</code> are comparison, with signed result</li>
+</ul>
+</li>
+<li><p>Condition</p>
+
+<ul>
+<li><code>if/unless (x &gt; 50) { print; }</code>
+
+<ul>
+<li>even only one line statement needs braces, to avoid <em>C programming dangle else trap</em></li>
+</ul>
+</li>
+<li><code>print if/unless (x &gt; 50);</code>
+
+<ul>
+<li>e.g. for printing <code>print $a, " is $b", $c;</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Loop</p>
+
+<ul>
+<li><code>for (my $x = 0; $x &lt;= 0; $sp++) {</code></li>
+<li><code>for/foreach $x (@array) {</code></li>
+<li>switch: <code>SWITCH: { if (/perl/) { $perl = 1; last SWITCH;</code></li>
+</ul>
+</li>
+</ul>
+
+
+<h3>TUT</h3>
+
+<ul>
+<li>last index of list: <code>$# array</code>, #elements <code>scalar(@array)</code></li>
+<li>make sure var stated within scope e.g. <code>my $var</code></li>
+<li><code>my $min = $array[0]</code> and <code>for my $var (@array)</code></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[perl week2]]></title>
+    <link href="http://pigfly.github.io/blog/2014/08/perl-week2/"/>
+    <updated>2014-08-30T02:57:15+10:00</updated>
+    <id>http://pigfly.github.io/blog/2014/08/perl-week2</id>
+    <content type="html"><![CDATA[<h2>Perl w2</h2>
+
+<h3>List and Array</h3>
+
+<h4>List</h4>
+
+<ul>
+<li>init. one element in list. <code>$fred[0] = "do";</code></li>
+<li>maximum element index: <code>$index = $#fred</code></li>
+<li>last value of list: <code>$last = $fred[$#fred]</code> or <code>$last = $fred[-1]</code></li>
+<li>out-of-bound subscripts return undef, print nothing</li>
+<li>assigning beyond <code>$#list</code>, just stretches the list, filling the middle element with <code>undefined</code>. e.g. <code>$fred[20] = hello</code>, then $fred[1…19] is there, but undefined</li>
+</ul>
+
+
+<!--more-->
+
+
+<hr />
+
+<ul>
+<li>list e.g. : <code>(1,2,3)</code> or <code>("fred", 4.5)</code> or <code>(1..10)</code></li>
+<li>e.g. <code>@ar = (1,2,3,4) @ar[1..3] == 4</code> is true, because @ar[1..3] in this context, only return 4 which is 4 == 4</li>
+<li>tips: <code>qw|i am a idoit|</code> quote each element with <code>" "</code>, so you don&rsquo;t need to manually type all quotes.</li>
+<li><code>$"</code> list separator, e.g. <code>$" = "++", print @ar;</code> will print something like aa++bb++cc++dd</li>
+</ul>
+
+
+<hr />
+
+<ul>
+<li>assignment of list: <code>($a, $b) = ("a", 2)</code>
+
+<ul>
+<li>list built up before assignment, swap made easy: <code>($a, $b) = ($b, $a)</code></li>
+</ul>
+</li>
+<li><code>@</code>: all of the. <code>@rock = qw(rock1 rock2)</code></li>
+<li><code>@</code> can be nested. <code>@rock_more = ("diamond", @rock, "go");</code></li>
+<li>remove end of array [<strong>has side effect</strong>]: <code>$final = pop @num;</code></li>
+<li>append to end of array [<strong>has side effect</strong>]: <code>push @num, 10..15</code></li>
+<li>remove from beginning [<strong>has side effect</strong>]: <code>$first = shift @num;</code></li>
+<li><code>reverse</code> and <code>sort</code> [<strong>create copy</strong>]</li>
+</ul>
+
+
+<hr />
+
+<h4>Perl&rsquo;s Default Scalar: <code>$_</code></h4>
+
+<ul>
+<li>designer&rsquo;s choice, programmers don&rsquo;t need to think about var name and type.</li>
+<li>omit control var from beginning of loop, perl uses <code>$_</code> as default control var.</li>
+<li><code>for (1..10) { $_ += 10; }</code></li>
+<li><code>$_ = "perl ruby python"; print</code>, will print perl ruby python</li>
+<li><code>$_</code> is by default a global variable. However, as of perl v5.10.0, you can use a lexical version of $_ by declaring it in a file or in a block with <code>my</code></li>
+</ul>
+
+
+<h4>Scalar, List Context</h4>
+
+<ul>
+<li>designer&rsquo;s choice: <em>you can&rsquo;t identify the meaning of expression until you know the <strong>context</strong></em></li>
+<li>e.g. <code>@people = qw(me mum); @list = @people</code> list here is list, <code>#num = @people</code> the number of people, 2</li>
+<li>e.g. <code>123 + sth</code> is scalar context, because <code>+</code> is for scalar !</li>
+<li>e.g. <code>print @ar."\n"</code>: is scalar context, print size of array</li>
+<li>e.g. scalar (@ar) is scalar context, print size of array</li>
+<li>in a nutshell, if you see some operators belonging to list, then its list context, otherwise, its scalar context.</li>
+</ul>
+
+
+<hr />
+
+<h4>loop</h4>
+
+<ul>
+<li><code>for $item (@rock = qw(java ruby python)) { $item .= " lang" }</code>
+
+<ul>
+<li><code>$item</code> automatically become <code>my</code> var. any outer <code>$item</code> is unaffected</li>
+<li><code>$item</code> as pointer, assigning to <code>$item</code> affects the <code>@rock</code></li>
+<li><code>for (@rock) { $_ = "hard $_" }</code></li>
+<li><code>" "</code> evaluates all symbols in it, <code>' '</code> just treats as literal string</li>
+</ul>
+</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[perl week1]]></title>
+    <link href="http://pigfly.github.io/blog/2014/08/perl-week1/"/>
+    <updated>2014-08-30T02:57:10+10:00</updated>
+    <id>http://pigfly.github.io/blog/2014/08/perl-week1</id>
+    <content type="html"><![CDATA[<h2>Perl w1</h2>
+
+<ul>
+<li>a little thought on Perl
+
+<ul>
+<li>make sure you <strong>know the <em>context</em></strong> when writing perl program</li>
+<li>make sure you understand <strong>which type of var</strong> you are using
+
+<ul>
+<li>scalar always start with <code>$</code></li>
+<li>list always start with <code>@</code></li>
+<li>dict always start with <code>%</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+
+<!--more-->
+
+
+<hr />
+
+<h3>I/O</h3>
+
+<ul>
+<li>input from stdin, one line at a time: <code>while (&lt;STDIN&gt;) {…}</code>, this is a shorthand for <code>while (defined(&lt;STDIN&gt;) )</code></li>
+<li>input from a handler, store each line as one element in a array, <code>my @ar = &lt;file&gt;</code></li>
+<li>input from command-line argument. <code>while (&lt;&gt;) {…}</code> e.g. <code>./read.pl file1 file2 …</code> will get input from file1, then file2, then…</li>
+<li>special symbol: all arguments from command-line stores in <code>@ARGV</code>, a special array.</li>
+<li>get the output from external unix command: <code>open my $file, "ls -al |"</code> open a pipe</li>
+<li>send the handler to external unix command: <code>open $file, "| lpr"</code></li>
+<li><strong>Idiom</strong>
+
+<ul>
+<li>read file word by word
+
+<ul>
+<li>read entire file as string <code>use File::Slurp;</code></li>
+<li>read entire file as string <code>my $file = read_file($ARGV[0])</code></li>
+<li>split the string into words <code>my @words = split /[ \t\r\n]+/, $file</code></li>
+<li>iterate thru <code>for (@words) …</code></li>
+</ul>
+</li>
+<li>read file char by char
+
+<ul>
+<li>read entire file as string use <code>File::Slurp</code></li>
+<li>split the string into characters <code>my @chars = split //, $file</code></li>
+<li>iterate thru <code>for (@chars) …</code></li>
+<li>more efficient you can split char line by line
+
+<ul>
+<li><code>while &lt;$file&gt; {@chars = split //}</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+
+<h4>File handles</h4>
+
+<hr />
+
+<ul>
+<li><p>Filehandler is actually a pointer</p></li>
+<li><p>three default file handlers: <code>STDIN STDOUT STDERR</code></p></li>
+<li><p>the <code>open</code> tells Perl to ask os to open connection between your program and the outside world</p></li>
+<li><p><code>open</code> can open any connection to real world, e.g. socket, process, file, pipe&hellip;</p>
+
+<ul>
+<li>meaning, if you want to input from other text file rather than <code>STDIN</code>, use <code>open HANDLERNAME, "&lt;", "textfile"</code> first, then treat HANDLERNAME just as normal stdin.</li>
+<li>meaning, if you want to output to other text file rancher than <code>STDOUT</code>, use <code>open HANDLER, "&gt;", "textfile"</code> first, then treat HANDLER just as STDOUT.</li>
+<li>e.g. <code>open IN, "&lt;", "textfile"; for (@IN) {…}</code> read from file</li>
+<li>e.g. <code>open OUT, "&gt;", "textfile"; select OUT; print…;</code> write to file</li>
+<li>e.g. <code>open OUT, "&gt;", "textfile"; print OUT, "…";</code> write to file just use print</li>
+<li><code>open</code> will return true if successfully opened, otherwise false</li>
+</ul>
+</li>
+<li><p>special symbol: <code>$!</code> print the essential information about system error. e.g. <code>print "bad, $!"</code></p>
+
+<ul>
+<li><strong>Bad FileHandle</strong>: <code>my $ok = open LOG, "&gt;&gt;", "log.txt"; if(!ok) {…}</code></li>
+</ul>
+</li>
+</ul>
+
+
+<h4>Subroutine</h4>
+
+<hr />
+
+<ul>
+<li><p>invoke: <code>&amp;name(parameter1, parameter2,…)</code>: e.g. <code>$n = &amp;max(1,2)</code></p></li>
+<li><p><strong>mutable parameters</strong>, all vars get passed into sub are reference, meaning all mutable !</p></li>
+<li><p>special symbol: <code>@_</code>, all parameters passed into subroutine stored in special array <code>@_</code>, you can retrieve any value like normal. e.g. <code>$_[0]</code></p>
+
+<ul>
+<li><strong>important</strong>: these <code>$_[2]</code> values has nothing to do with <code>$_</code>, don&rsquo;t get confused.</li>
+<li>give name to default parameters: <code>($name1, $name2) = ($_[0], $_[1])</code> or <code>($name1, $name2, $name3…) = @_</code></li>
+</ul>
+</li>
+<li><p>return value: <strong>last expression evaluated</strong> will be return value!</p>
+
+<ul>
+<li>the <code>return</code> keyword isn&rsquo;t really necessary, for simplicity, you can omit, because always the last expression gets evaluated return its value</li>
+</ul>
+</li>
+<li><p>prototype: <code>sub add($$)</code> tell perl this sub need exactly two scalar. <code>sub divide($@)</code> tell perl this sub need exactly one scalar and one array</p></li>
+</ul>
+
+
+<h4>Hash</h4>
+
+<hr />
+
+<ul>
+<li><p>a little thought on Perl</p>
+
+<ul>
+<li>make sure you <strong>know the <em>context</em></strong> when writing perl program</li>
+<li>make sure you understand <strong>which type of var</strong> you are using
+
+<ul>
+<li>scalar always start with <code>$</code></li>
+<li>list always start with <code>@</code></li>
+<li>dict always start with <code>%</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>what is dict</p>
+
+<ul>
+<li>key-value pair.</li>
+<li>key: must be string.</li>
+<li>value: must be scalar var.</li>
+<li><strong>random access, no order guarantee !</strong></li>
+</ul>
+</li>
+<li><p>dict assignment</p>
+
+<ul>
+<li><code>my %dict; $dict{"s344"} = "alex";</code></li>
+<li><code>my %dict = qw(s344 alex s345 pcy);</code></li>
+<li><code>my %dict = ("s344", 2, "s355", 1);</code></li>
+<li><code>my %dict = ("s344"=&gt;2, "s444"=&gt;1);</code></li>
+<li>the <code>%dict</code> accepts a list, and convert elements to key-value pair, the example above may be converted like <em>&ldquo;(key,value,key,value)&rdquo;</em></li>
+</ul>
+</li>
+<li><p>dict as a whole</p>
+
+<ul>
+<li><code>my %dict; %rev = reverse %dict;</code> will get <em>&ldquo;(value=>key)&rdquo;</em> pairs</li>
+<li><code>@list = %dict; print "@list"</code> will print a <em>&ldquo;(key, value)&rdquo;</em> list</li>
+</ul>
+</li>
+<li><p>dict operation</p>
+
+<ul>
+<li><code>keys</code>: yield a list of all keys in hash. <code>my @k = keys %dict;</code></li>
+<li><code>values</code>: yield a list of all values in hash. <code>my @v = values %dict;</code></li>
+<li>iterate thru
+
+<ul>
+<li><code>each</code>: return next key-value pair. <code>while( my($k, $v) = each %hash ) {…}</code> <em>more efficient</em></li>
+<li><code>for (keys %dict) { my $v = $dict{$_} …}</code> <em>less efficient</em></li>
+<li>you should not delete a key out of a hash (or add keys) while iterating over it using each(), because this may confuse Perl: instead, <strong>creating a new flittered array or hash with push() or dict assignment while iterated thru</strong> <a href="http://perl-begin.org/tutorials/bad-elements/#modifying_iterated_array">SRC</a></li>
+</ul>
+</li>
+<li>delete key
+
+<ul>
+<li>delete: <code>delete $books{$person}</code> delete key-value pair, tricky is the return value is that key!</li>
+</ul>
+</li>
+<li>tips: <code>my $count = keys %dict;</code> return # of keys !</li>
+<li>tips: <code>print %dict</code> will print content of hash in an array.</li>
+</ul>
+</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

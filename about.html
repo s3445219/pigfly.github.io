@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Pigfly's learning notes</title>
+  <title>about - Pigfly's learning notes</title>
   <meta name="author" content="Alex">
 
    
@@ -19,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://pigfly.github.io">
+  <link rel="canonical" href="http://pigfly.github.io/about.html">
   <link href="/favicon.png" rel="icon">
   <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
   <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
@@ -52,7 +52,7 @@
     
         <li ><a href="/blog/archives">Archives</a></li>
     
-        <li ><a href="/about.html">about</a></li>
+        <li class="active"><a href="/about.html">about</a></li>
     
 </ul>
 
@@ -79,135 +79,72 @@
   <div class="container" id="main">
       <div class="row-fluid">
         <div id="content">
-          <div class="jumbotron">
-  <div class="container">
-    
-      Pigfly's learning notes
-    
-    <h3 class="tagline">
-      
-        Yet another static blog for writing down what I've learned...
-      
-    </h3>
-  </div>
+          <article role="article">
+  
+  <header>
+    <div class="jumbotron">
+      About
+    </div>
+    <p class="meta"><!-- https://github.com/imathis/octopress/commit/73e540409ceb8bc18048b6a96a4b815fc303ea28 -->
+
+
+
+
+
+<time class='entry-date' datetime='2014-08-30T13:09:00+10:00'><span class='date'>2014-08-30</span> <span class='time'>13:09</span></time></p>
+  </header>
+  
+  <h2>Who am I</h2>
+
+<ul>
+<li>A student at RMIT</li>
+<li>Node.js player</li>
+<li>Rails fan</li>
+<li>Laravel lover</li>
+<li>*nix addict</li>
+<li>Work as an iOS and devops intern.</li>
+<li>Work as a tutor at RMIT</li>
+</ul>
+
+
+<hr />
+
+<h2>What is this site about</h2>
+
+<ul>
+<li>a temporary static site for holding my random thoughts while learning and working.</li>
+</ul>
+
+
+<h2>What else</h2>
+
+<ul>
+<li>You can find some of my other posts and work here: <a href="http://pigfly.io">pigfly.io</a></li>
+</ul>
+
+
+<hr />
+
+<h2>Skill diagram</h2>
+
+<p><canvas id="myChart" width="400" height="400"></canvas></p>
+
+<script src="/js/libs/Chart.min.js"></script>
+
+
+<script src="/js/about-skill.js"></script>
+
+
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
 </div>
-
-
-<div class="blog-index">
-  
-  
-  
-    <article>
-      
-
-  <div class="row-fluid">
-    <div class="span2 post-meta">
-	  <h5 class="date-time"><!-- https://github.com/imathis/octopress/commit/73e540409ceb8bc18048b6a96a4b815fc303ea28 -->
+  </section>
 
 
 
-
-
-<i class="icon-calendar"></i> <time class='entry-date' datetime='2014-11-11T03:14:19+11:00'><span class='date'>2014-11-11</span> <span class='time'>03:14</span></time></h5>
-          <div class="row-fluid">
-          
-          </div>
-          
-          <div class="row-fluid">
-          
-          <a href="/blog/categories/ios/"><span class="badge">ios</span></a>
-          
-          </div>
-          
-    </div>
-    <div class="span10 post-container">
-      <h1 class="link"><a href="/blog/2014/11/road-to-ios-0-dot-x/">road to iOS 0.x</a></h1>
-      <h2>ImageIO - could not find ColorSync function [Solved]</h2>
-
-<p>Recently I found an undocumented bug in iOS 8 when I tried to generate pdf under UIkit framework. The bug blocks me from generating pdf in a preferred way using UIPrint, so I had to use a more primitve method to generate the pdf in iOS8.</p>
-
-<p>For better understanding this issue, first I will introduce ways of generating PDF in iOS, and why it may become a problem in iOS8 or above.</p>
-
-
-      
-       <a href="/blog/2014/11/road-to-ios-0-dot-x/">Read more &rarr;</a> 
-    </div>
-  </div>
-
-
-
-    </article>
-    
-    <hr>
-    
-  
-  
-    <article>
-      
-
-  <div class="row-fluid">
-    <div class="span2 post-meta">
-	  <h5 class="date-time"><!-- https://github.com/imathis/octopress/commit/73e540409ceb8bc18048b6a96a4b815fc303ea28 -->
-
-
-
-
-
-<i class="icon-calendar"></i> <time class='entry-date' datetime='2014-10-14T10:14:19+11:00'><span class='date'>2014-10-14</span> <span class='time'>10:14</span></time></h5>
-          <div class="row-fluid">
-          
-          </div>
-          
-          <div class="row-fluid">
-          
-          <a href="/blog/categories/ios/"><span class="badge">ios</span></a>
-          
-          </div>
-          
-    </div>
-    <div class="span10 post-container">
-      <h1 class="link"><a href="/blog/2014/10/road-to-ios-0-dot-6-dot-1/">road to iOS 0.6.1</a></h1>
-      <h1>All about Nib file</h1>
-
-<h2>Anatomy of Nib file</h2>
-
-<ul>
-<li><strong>User interface</strong> objects(Visual elements)</li>
-<li><strong>File Owner</strong>, placeholder, a <strong>controller</strong> object that is responsible for contents of nib file.
-
-<ul>
-<li>Usually you will want to connect a controller to the nib file, so that controller&rsquo;s <strong>view</strong> can be connected with nib&rsquo;s top-level object</li>
-<li>However, if you want to break a view into different nib components,  then assemble them together in one controller, you can leave this <strong>File Owner</strong> blank, and load all nibs in your controller.</li>
-</ul>
-</li>
-<li><strong>First Responder</strong>, placeholder, the first object in your app&rsquo;s responder chain.
-
-<ul>
-<li>The UIKit framework automatically set first responder for you</li>
-</ul>
-</li>
-</ul>
-
-
-
-      
-       <a href="/blog/2014/10/road-to-ios-0-dot-6-dot-1/">Read more &rarr;</a> 
-    </div>
-  </div>
-
-
-
-    </article>
-    
-  
-  <div class="pagination">
-    
-    <a class="prev" href="/posts/2">&larr; Older Posts</a>
-    
-    |
-    
-  </div>
-</div>
 
         </div>
       </div>
@@ -229,7 +166,10 @@
       var disqus_shortname = 'pigfly';
       
         
-        var disqus_script = 'count.js';
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://pigfly.github.io/about.html';
+        var disqus_url = 'http://pigfly.github.io/about.html';
+        var disqus_script = 'embed.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

@@ -1,0 +1,407 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>perl week1 - Pigfly's learning notes</title>
+  <meta name="author" content="Alex">
+
+   
+  <meta name="description" content="Yet another static blog for writing down what I've learned...">
+  
+  <meta name="keywords" content="">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://pigfly.github.io/blog/2014/08/perl-week1">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Pigfly's learning notes" type="application/atom+xml">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap-collapse.js"></script>
+  <script src="/js/modernizr-2.0.js"></script>
+  <script src="/js/octopress.js" type="text/javascript"></script>
+  <script src="/js/application.js"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <div class="navbar navbar-inverse navbar-static-top">
+  	<div class="navbar-inner">
+  	  <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="fui-menu-24"></span>
+        </a>
+  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
+  	      <ul class="nav">
+    
+        <li ><a href="/">Home</a></li>
+    
+        <li ><a href="/blog/archives">Archives</a></li>
+    
+        <li ><a href="/about.html">about</a></li>
+    
+</ul>
+
+<ul class="nav pull-right">
+    
+    <li><a href="http://github.com/pigfly" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+    
+    
+    
+    <li><a href="http://linkedin.com/in/notalexjiang" title="Linkedin Profile"><i class="icon-linkedin-sign social-navbar"></i></a></li>
+    
+    
+    
+    
+    
+
+    
+</ul>
+
+  	    </div>
+  	  </div>
+  	</div>
+  </div>
+  <div class="container" id="main">
+      <div class="row-fluid">
+        <div id="content">
+          <div>
+<article class="hentry" role="article">
+  
+
+  <header>
+  <div class="jumbotron">
+    Perl Week1
+	<h5><!-- https://github.com/imathis/octopress/commit/73e540409ceb8bc18048b6a96a4b815fc303ea28 -->
+
+
+
+
+
+<i class="icon-calendar"></i> <time class='entry-date' datetime='2014-08-30T02:57:10+10:00'><span class='date'>2014-08-30</span> <span class='time'>02:57</span></time></h5>
+  </div>
+</header>
+  <div class="row-fluid">
+    <div class="span12">
+      <h2>Perl w1</h2>
+
+<ul>
+<li>a little thought on Perl
+
+<ul>
+<li>make sure you <strong>know the <em>context</em></strong> when writing perl program</li>
+<li>make sure you understand <strong>which type of var</strong> you are using
+
+<ul>
+<li>scalar always start with <code>$</code></li>
+<li>list always start with <code>@</code></li>
+<li>dict always start with <code>%</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+
+<!--more-->
+
+
+<hr />
+
+<h3>I/O</h3>
+
+<ul>
+<li>input from stdin, one line at a time: <code>while (&lt;STDIN&gt;) {…}</code>, this is a shorthand for <code>while (defined(&lt;STDIN&gt;) )</code></li>
+<li>input from a handler, store each line as one element in a array, <code>my @ar = &lt;file&gt;</code></li>
+<li>input from command-line argument. <code>while (&lt;&gt;) {…}</code> e.g. <code>./read.pl file1 file2 …</code> will get input from file1, then file2, then…</li>
+<li>special symbol: all arguments from command-line stores in <code>@ARGV</code>, a special array.</li>
+<li>get the output from external unix command: <code>open my $file, "ls -al |"</code> open a pipe</li>
+<li>send the handler to external unix command: <code>open $file, "| lpr"</code></li>
+<li><strong>Idiom</strong>
+
+<ul>
+<li>read file word by word
+
+<ul>
+<li>read entire file as string <code>use File::Slurp;</code></li>
+<li>read entire file as string <code>my $file = read_file($ARGV[0])</code></li>
+<li>split the string into words <code>my @words = split /[ \t\r\n]+/, $file</code></li>
+<li>iterate thru <code>for (@words) …</code></li>
+</ul>
+</li>
+<li>read file char by char
+
+<ul>
+<li>read entire file as string use <code>File::Slurp</code></li>
+<li>split the string into characters <code>my @chars = split //, $file</code></li>
+<li>iterate thru <code>for (@chars) …</code></li>
+<li>more efficient you can split char line by line
+
+<ul>
+<li><code>while &lt;$file&gt; {@chars = split //}</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+
+<h4>File handles</h4>
+
+<hr />
+
+<ul>
+<li><p>Filehandler is actually a pointer</p></li>
+<li><p>three default file handlers: <code>STDIN STDOUT STDERR</code></p></li>
+<li><p>the <code>open</code> tells Perl to ask os to open connection between your program and the outside world</p></li>
+<li><p><code>open</code> can open any connection to real world, e.g. socket, process, file, pipe&hellip;</p>
+
+<ul>
+<li>meaning, if you want to input from other text file rather than <code>STDIN</code>, use <code>open HANDLERNAME, "&lt;", "textfile"</code> first, then treat HANDLERNAME just as normal stdin.</li>
+<li>meaning, if you want to output to other text file rancher than <code>STDOUT</code>, use <code>open HANDLER, "&gt;", "textfile"</code> first, then treat HANDLER just as STDOUT.</li>
+<li>e.g. <code>open IN, "&lt;", "textfile"; for (@IN) {…}</code> read from file</li>
+<li>e.g. <code>open OUT, "&gt;", "textfile"; select OUT; print…;</code> write to file</li>
+<li>e.g. <code>open OUT, "&gt;", "textfile"; print OUT, "…";</code> write to file just use print</li>
+<li><code>open</code> will return true if successfully opened, otherwise false</li>
+</ul>
+</li>
+<li><p>special symbol: <code>$!</code> print the essential information about system error. e.g. <code>print "bad, $!"</code></p>
+
+<ul>
+<li><strong>Bad FileHandle</strong>: <code>my $ok = open LOG, "&gt;&gt;", "log.txt"; if(!ok) {…}</code></li>
+</ul>
+</li>
+</ul>
+
+
+<h4>Subroutine</h4>
+
+<hr />
+
+<ul>
+<li><p>invoke: <code>&amp;name(parameter1, parameter2,…)</code>: e.g. <code>$n = &amp;max(1,2)</code></p></li>
+<li><p><strong>mutable parameters</strong>, all vars get passed into sub are reference, meaning all mutable !</p></li>
+<li><p>special symbol: <code>@_</code>, all parameters passed into subroutine stored in special array <code>@_</code>, you can retrieve any value like normal. e.g. <code>$_[0]</code></p>
+
+<ul>
+<li><strong>important</strong>: these <code>$_[2]</code> values has nothing to do with <code>$_</code>, don&rsquo;t get confused.</li>
+<li>give name to default parameters: <code>($name1, $name2) = ($_[0], $_[1])</code> or <code>($name1, $name2, $name3…) = @_</code></li>
+</ul>
+</li>
+<li><p>return value: <strong>last expression evaluated</strong> will be return value!</p>
+
+<ul>
+<li>the <code>return</code> keyword isn&rsquo;t really necessary, for simplicity, you can omit, because always the last expression gets evaluated return its value</li>
+</ul>
+</li>
+<li><p>prototype: <code>sub add($$)</code> tell perl this sub need exactly two scalar. <code>sub divide($@)</code> tell perl this sub need exactly one scalar and one array</p></li>
+</ul>
+
+
+<h4>Hash</h4>
+
+<hr />
+
+<ul>
+<li><p>a little thought on Perl</p>
+
+<ul>
+<li>make sure you <strong>know the <em>context</em></strong> when writing perl program</li>
+<li>make sure you understand <strong>which type of var</strong> you are using
+
+<ul>
+<li>scalar always start with <code>$</code></li>
+<li>list always start with <code>@</code></li>
+<li>dict always start with <code>%</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>what is dict</p>
+
+<ul>
+<li>key-value pair.</li>
+<li>key: must be string.</li>
+<li>value: must be scalar var.</li>
+<li><strong>random access, no order guarantee !</strong></li>
+</ul>
+</li>
+<li><p>dict assignment</p>
+
+<ul>
+<li><code>my %dict; $dict{"s344"} = "alex";</code></li>
+<li><code>my %dict = qw(s344 alex s345 pcy);</code></li>
+<li><code>my %dict = ("s344", 2, "s355", 1);</code></li>
+<li><code>my %dict = ("s344"=&gt;2, "s444"=&gt;1);</code></li>
+<li>the <code>%dict</code> accepts a list, and convert elements to key-value pair, the example above may be converted like <em>&ldquo;(key,value,key,value)&rdquo;</em></li>
+</ul>
+</li>
+<li><p>dict as a whole</p>
+
+<ul>
+<li><code>my %dict; %rev = reverse %dict;</code> will get <em>&ldquo;(value=>key)&rdquo;</em> pairs</li>
+<li><code>@list = %dict; print "@list"</code> will print a <em>&ldquo;(key, value)&rdquo;</em> list</li>
+</ul>
+</li>
+<li><p>dict operation</p>
+
+<ul>
+<li><code>keys</code>: yield a list of all keys in hash. <code>my @k = keys %dict;</code></li>
+<li><code>values</code>: yield a list of all values in hash. <code>my @v = values %dict;</code></li>
+<li>iterate thru
+
+<ul>
+<li><code>each</code>: return next key-value pair. <code>while( my($k, $v) = each %hash ) {…}</code> <em>more efficient</em></li>
+<li><code>for (keys %dict) { my $v = $dict{$_} …}</code> <em>less efficient</em></li>
+<li>you should not delete a key out of a hash (or add keys) while iterating over it using each(), because this may confuse Perl: instead, <strong>creating a new flittered array or hash with push() or dict assignment while iterated thru</strong> <a href="http://perl-begin.org/tutorials/bad-elements/#modifying_iterated_array">SRC</a></li>
+</ul>
+</li>
+<li>delete key
+
+<ul>
+<li>delete: <code>delete $books{$person}</code> delete key-value pair, tricky is the return value is that key!</li>
+</ul>
+</li>
+<li>tips: <code>my $count = keys %dict;</code> return # of keys !</li>
+<li>tips: <code>print %dict</code> will print content of hash in an array.</li>
+</ul>
+</li>
+</ul>
+
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    <hr>
+    
+    <div class="row-fluid">
+      
+      <div class="span6">
+        <p class="meta">
+        
+        
+
+
+
+  <a href="/blog/categories/perl/"><span class="badge">perl</span></a>
+
+
+
+
+        </p>
+      </div>
+      
+      <div class="span6 social-sharing">
+        <div class="sharing">
+  <div class="addthis_toolbox addthis_default_style ">
+  
+  
+  <a class="addthis_button_tweet"></a>
+  
+  
+  <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+
+      </div>
+      
+      
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span12">
+        <p class="meta">
+          
+          
+            <a class="basic-alignment right" href="/blog/2014/08/perl-week2/" title="Next Post: perl week2">perl week2 &raquo;</a>
+          
+        </p>
+      </div>
+    </div>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+
+
+        </div>
+      </div>
+      <div class="row-fluid">
+        <footer class="footer-page" role="contentinfo">
+          <p>
+  Copyright &copy; 2015 - <a href="http://pigfly.io">Alex</a> -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  - Under Creative Commons <a href="http://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>
+</p>
+
+
+        </footer>
+      </div>
+  </div>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'pigfly';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://pigfly.github.io/blog/2014/08/perl-week1/';
+        var disqus_url = 'http://pigfly.github.io/blog/2014/08/perl-week1/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
